@@ -3,14 +3,14 @@
 PyShifts is a graphical analysis tool that utilize chemical shifts to assess the global quality of NMR structures of RNA. For more information on theoretical basis as well as our promising test results, see http://linktoManuscript . 
  
 ## Installation
-Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics tool. Python of version 2.7.10 and PyMOL is REQUIRED for Pyshifts.
+Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics tool. Python of version 2.7.10 and PyMOL are REQUIRED for Pyshifts.
 #### 1. Python
 - Python version of 2.7.10 (and 2.7.10 only), which is freely available at https://www.python.org/downloads/release/python-2710/.
 - If your current Python version is not 2.7.10, and you prefer not to change it, you can use the following commands to create a Python 2.7.10 environment temporarily for Pyshifts:
-        conda create -n pyshifts python=2.7.10
-        source active pyshifts
+            conda create -n pyshifts python=2.7.10
+            source active pyshifts
 After each use of Pyshifts, use 
-        source deactivate pyshifts
+            source deactivate pyshifts
 to go back to your normal Python settings.
 
 #### 2. PyMOL 
@@ -22,6 +22,7 @@ You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.
 
 ## Using Pyshifts
 For more detailed instructions, watch video on youtube http://youtube.com/TOBEDONE
+
 1. Load the object to be analyzed in PyMOL.
 
 2. Run Pyshifts through Plugin -> Pyshifts. There are a progress bar, four tabs and one 'Exit' button in the pop-up window. The first tab 'Options' include basic options for Pyshifts and main 'Execute' button. In the second tab 'Error Analysis', table results will be shown and there are options about sorting tables. In the 'Advanced Options' tab, there are a few options on error offset and rendering error in PyMOL.
@@ -37,7 +38,6 @@ The PyMOL Plugin source code in this file is copyrighted, but you can
 freely use and copy it as long as you don't change or remove any of
 the copyright notices.
 
-----------------------------------------------------------------------
                       This PyMOL Plugin is Copyright (C) 2016 by 
            Jingru Xie <jingrux at umich dot edu> and Aaron T. Frank <afrankz at umich dot edu>
 
