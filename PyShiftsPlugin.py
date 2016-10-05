@@ -144,8 +144,8 @@ class PyShiftsPlugin:
         if 'LARMORD_BIN' in os.environ:
             if VERBOSE: print 'Found LARMORD_BIN in environmental variables', os.environ['LARMORD_BIN']
             self.larmord_bin.set(os.environ['LARMORD_BIN'])
-            self.larmord_cs.set(os.environ['LARMORD_BIN']+"/../../LarmordPymol/test/measured_shifts_2KOC.dat")#for test use only
-            self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../LarmordPymol/test/predCS_test.dat")#for test use only
+            self.larmord_cs.set(os.environ['LARMORD_BIN']+"/../../test/measured_shifts_2KOC.dat")#for test use only
+            self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../test/predCS_test.dat")#for test use only
             self.pymol_sel.set("test")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
             self.larmord_ref.set(os.environ['LARMORD_BIN']+"/../data/larmorD_reference_shifts_rna.dat")
