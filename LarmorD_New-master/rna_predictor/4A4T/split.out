@@ -1,0 +1,15 @@
+--2016-02-10 18:36:05--  http://www.rcsb.org/pdb/files/4A4T.pdb
+Resolving www.rcsb.org (www.rcsb.org)... 128.6.70.10
+Connecting to www.rcsb.org (www.rcsb.org)|128.6.70.10|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/plain]
+Saving to: ‘4A4T.pdb’
+
+     0K .......... .......... .......... .......... ..........  400K
+    50K .......... .......... .......... .......... .......... 1.15M
+   100K .......... .......... .......... .......... ..........  997K
+   150K .......... .......... .......... .......... ......     1.11M=0.3s
+
+2016-02-10 18:36:05 (760 KB/s) - ‘4A4T.pdb’ saved [201366]
+
+4A4T contains 5 models

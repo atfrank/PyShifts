@@ -1,0 +1,13 @@
+MAKE = make
+CXX = g++
+CXXFLAGS = -Wall
+#OPTFLAGS = -O3
+ifeq ($(UNAME_S),Darwin)
+                OPTFLAGS = ""
+endif
+#DEBUG = -g
+OTHERLIBS = ../
+INCFLAGS = -I../lib -I$(OTHERLIBS)
+LINKFLAGS = -L../lib -lmoletools 
+BINDIR = ../bin
+LIBEXT=a

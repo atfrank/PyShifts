@@ -1,0 +1,13 @@
+--2016-02-10 18:29:03--  http://www.rcsb.org/pdb/files/1L1W.pdb
+Resolving www.rcsb.org (www.rcsb.org)... 128.6.70.10
+Connecting to www.rcsb.org (www.rcsb.org)|128.6.70.10|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/plain]
+Saving to: ‘1L1W.pdb’
+
+     0K .......... .......... .......... .......... ..........  514K
+    50K .......... .......... .......... ......                1.02M=0.1s
+
+2016-02-10 18:29:03 (653 KB/s) - ‘1L1W.pdb’ saved [88290]
+
+1L1W contains 1 models
