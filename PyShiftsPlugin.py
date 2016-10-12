@@ -208,7 +208,7 @@ class PyShiftsPlugin:
                                       label_text='Chemical Shift File:', labelpos='wn',
                                       entry_textvariable=self.larmord_cs,
                                       entry_width=10)
-        self.balloon.bind(self.larmord_cs_ent, 'External mode:                                          \nThis file should contain the chemical shifts for nuclei of interest                                          \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - should match the state in the Pymol object to ensure accurate mapping of difference is subsequent analysis                                          \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                          \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference chemical shifts that, for a given nucleus, should not change with model_index                                          \nCS_values_2 - comparison chemical shifts that, for a given nucleus, may change with model_index                                          \n                                          \nLarmord or Ramsey mode:                                          \nThis file should contain the reference chemical shifts that will be                                          \ncompared to the chemical shifts computed from the structure(s) using LARMORD or RAMSEY                                          \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - can be any value since it is ignore this mode                                          \nresidue_number - same as above                                          \nresidue_name - same as above                                          \nnucleus_name - same as above                                          \nCS_values_1 - same as above                                          \nCS_values_2 - can be any value since it is ignored in this mode')
+        self.balloon.bind(self.larmord_cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or RAMSEY or reference chemical shifts supplied by the user.      \n[Format:residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
         self.larmord_cs_but = Tkinter.Button(group_struc, text = 'Browse...', command = self.getLarmordCS)        
 
         # Larmord_cs2 entry serves as the path to predicted chemical shifts file when in 'Analyze shifts' mode
@@ -217,7 +217,7 @@ class PyShiftsPlugin:
                                         label_text='Predicted Chemical Shift File:', labelpos='wn',
                                         entry_textvariable=self.larmord_cs2,
                                         entry_width=10)
-        self.balloon.bind(self.larmord_cs2_ent, "Path to predicted chemical shifts data (only applicable in 'other' mode)")
+        self.balloon.bind(self.larmord_cs2_ent, "Path to predicted chemical shifts data (only applicable in 'Other' mode) \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - should match the state in the Pymol object to ensure accurate mapping of difference is subsequent analysis                                          \nresidue_number - same as above                                        \nresidue_name - same as above                                         \nnucleus_name - same as above                                    \nCS_values_1 - can be any value since it is ignored in this part                                         \nCS_values_2 - comparison chemical shifts that, for a given nucleus, may change with model_index ")
         self.larmord_cs2_but = Tkinter.Button(group_struc, text = 'Browse...', command = self.getLarmordCS2)       
         
         self.larmord_cs2_but.configure(state = "disabled")
@@ -234,7 +234,7 @@ class PyShiftsPlugin:
                         hull_relief = 'ridge',
                 )
         
-        self.balloon.bind(self.mode_radio, 'External mode: chemical shifts to be compared will be read from the user supplied chemical shift file.\nCompute and Analyze Shifts mode: chemical shifts will be computed using LARMORD and compared to chemical shifts in the user supplied chemical shift file')
+        self.balloon.bind(self.mode_radio, 'Combined mode: chemical shifts will be computed using both LARMORD and RAMSEY and the result will be the average.\nRamsey mode: chemical shifts will be computed using RAMSEY.\nLarmord mode: chemical shifts will be computed using LARMORD.\nIn these three modes, computed chemical shifts will be compared to chemical shifts in the user supplied chemical shift file. \nOther mode: chemical shifts to be compared will be read from the user supplied chemical shift file.')
         # Add some buttons to the radiobuttons RadioSelect.
         for text in ('Combined', 'Larmord', 'Ramsey', 'Other'):
             self.mode_radio.add(text)
@@ -783,7 +783,7 @@ class PyShiftsPlugin:
                     keyMAE = str(larmord_resname[res]+":"+larmord_nucleus[res]).strip()
                     self.mae[keyMAE] = larmord_mae[res]
             else:
-                self.print_file_error(self.larmord_acc.get())
+                #self.print_file_error(self.larmord_acc.get())
                 return False          
         
         # default MAE list    
@@ -791,190 +791,190 @@ class PyShiftsPlugin:
             print "loading default MAE..."
             # MAE for Larmord
             if (self.get_shifts_from_larmord) and not (self.get_shifts_from_larmord):
-            	self.mae["ADE:C1'"] = 0.700
-            	self.mae["ADE:C2"] = 0.764
-            	self.mae["ADE:C2'"] = 0.471
-            	self.mae["ADE:C3'"] = 1.017
-            	self.mae["ADE:C4'"] = 0.709
-            	self.mae["ADE:C5'"] = 0.914
-            	self.mae["ADE:C8"] = 0.684
-            	self.mae["ADE:H1'"] = 0.114
-            	self.mae["ADE:H2"] = 0.205
-            	self.mae["ADE:H2'"] = 0.107
-            	self.mae["ADE:H3'"] = 0.113
-            	self.mae["ADE:H4'"] = 0.074
-            	self.mae["ADE:H5'"] = 0.314
-            	self.mae["ADE:H5''"] = 0.132
-            	self.mae["ADE:H8"] = 0.161
-            	self.mae["GUA:C1'"] = 0.681
-            	self.mae["GUA:C2'"] = 0.546
-            	self.mae["GUA:C3'"] = 0.861
-            	self.mae["GUA:C4'"] = 0.817
-            	self.mae["GUA:C5'"] = 0.893
-            	self.mae["GUA:C8"] = 0.715
-            	self.mae["GUA:H1'"] = 0.168
-            	self.mae["GUA:H2'"] = 0.142
-            	self.mae["GUA:H3'"] = 0.124
-            	self.mae["GUA:H4'"] = 0.075
-            	self.mae["GUA:H5'"] = 0.271
-            	self.mae["GUA:H5''"] = 0.123
-            	self.mae["GUA:H8"] = 0.202
-            	self.mae["URA:C1'"] = 0.681
-            	self.mae["URA:C2'"] = 0.598
-            	self.mae["URA:C3'"] = 0.981
-            	self.mae["URA:C4'"] = 1.106
-            	self.mae["URA:C5"] = 0.562
-            	self.mae["URA:C5'"] = 0.735
-            	self.mae["URA:C6"] = 0.705
-            	self.mae["URA:H1'"] = 0.105
-            	self.mae["URA:H2'"] = 0.129
-            	self.mae["URA:H3'"] = 0.088
-            	self.mae["URA:H4'"] = 0.071
-            	self.mae["URA:H5"] = 0.120
-            	self.mae["URA:H5'"] = 0.303
-            	self.mae["URA:H5''"] = 0.121
-            	self.mae["URA:H6"] = 0.099
-            	self.mae["CYT:C1'"] = 0.642
-            	self.mae["CYT:C2'"] = 0.980
-            	self.mae["CYT:C3'"] = 1.147
-            	self.mae["CYT:C4'"] = 0.617
-            	self.mae["CYT:C5"] = 1.945
-            	self.mae["CYT:C5'"] = 0.938
-            	self.mae["CYT:C6"] = 0.584
-            	self.mae["CYT:H1'"] = 0.111
-            	self.mae["CYT:H2'"] = 0.101
-            	self.mae["CYT:H3'"] = 0.113
-            	self.mae["CYT:H4'"] = 0.094
-            	self.mae["CYT:H5"] = 0.114
-            	self.mae["CYT:H5'"] = 0.312
-            	self.mae["CYT:H5''"] = 0.194
-            	self.mae["CYT:H6"] = 0.117
-            	self.mae["URA:N3"] = 2.609
-            	self.mae["GUA:N1"] = 1.259
+                self.mae["ADE:C1'"] = 0.700
+                self.mae["ADE:C2"] = 0.764
+                self.mae["ADE:C2'"] = 0.471
+                self.mae["ADE:C3'"] = 1.017
+                self.mae["ADE:C4'"] = 0.709
+                self.mae["ADE:C5'"] = 0.914
+                self.mae["ADE:C8"] = 0.684
+                self.mae["ADE:H1'"] = 0.114
+                self.mae["ADE:H2"] = 0.205
+                self.mae["ADE:H2'"] = 0.107
+                self.mae["ADE:H3'"] = 0.113
+                self.mae["ADE:H4'"] = 0.074
+                self.mae["ADE:H5'"] = 0.314
+                self.mae["ADE:H5''"] = 0.132
+                self.mae["ADE:H8"] = 0.161
+                self.mae["GUA:C1'"] = 0.681
+                self.mae["GUA:C2'"] = 0.546
+                self.mae["GUA:C3'"] = 0.861
+                self.mae["GUA:C4'"] = 0.817
+                self.mae["GUA:C5'"] = 0.893
+                self.mae["GUA:C8"] = 0.715
+                self.mae["GUA:H1'"] = 0.168
+                self.mae["GUA:H2'"] = 0.142
+                self.mae["GUA:H3'"] = 0.124
+                self.mae["GUA:H4'"] = 0.075
+                self.mae["GUA:H5'"] = 0.271
+                self.mae["GUA:H5''"] = 0.123
+                self.mae["GUA:H8"] = 0.202
+                self.mae["URA:C1'"] = 0.681
+                self.mae["URA:C2'"] = 0.598
+                self.mae["URA:C3'"] = 0.981
+                self.mae["URA:C4'"] = 1.106
+                self.mae["URA:C5"] = 0.562
+                self.mae["URA:C5'"] = 0.735
+                self.mae["URA:C6"] = 0.705
+                self.mae["URA:H1'"] = 0.105
+                self.mae["URA:H2'"] = 0.129
+                self.mae["URA:H3'"] = 0.088
+                self.mae["URA:H4'"] = 0.071
+                self.mae["URA:H5"] = 0.120
+                self.mae["URA:H5'"] = 0.303
+                self.mae["URA:H5''"] = 0.121
+                self.mae["URA:H6"] = 0.099
+                self.mae["CYT:C1'"] = 0.642
+                self.mae["CYT:C2'"] = 0.980
+                self.mae["CYT:C3'"] = 1.147
+                self.mae["CYT:C4'"] = 0.617
+                self.mae["CYT:C5"] = 1.945
+                self.mae["CYT:C5'"] = 0.938
+                self.mae["CYT:C6"] = 0.584
+                self.mae["CYT:H1'"] = 0.111
+                self.mae["CYT:H2'"] = 0.101
+                self.mae["CYT:H3'"] = 0.113
+                self.mae["CYT:H4'"] = 0.094
+                self.mae["CYT:H5"] = 0.114
+                self.mae["CYT:H5'"] = 0.312
+                self.mae["CYT:H5''"] = 0.194
+                self.mae["CYT:H6"] = 0.117
+                self.mae["URA:N3"] = 2.609
+                self.mae["GUA:N1"] = 1.259
             # MAE for Ramsey
             if not (self.get_shifts_from_larmord) and (self.get_shifts_from_ramsey): 
-				self.mae["ADE:C1'"]=0.683
-				self.mae["ADE:C2"]=0.484
-				self.mae["ADE:C2'"]=0.462
-				self.mae["ADE:C3'"]=0.936
-				self.mae["ADE:C4'"]=0.636
-				self.mae["ADE:C5'"]=0.818
-				self.mae["ADE:C8"]=0.668
-				self.mae["ADE:H1'"]=0.166
-				self.mae["ADE:H2"]=0.185
-				self.mae["ADE:H2'"]=0.140
-				self.mae["ADE:H3'"]=0.107
-				self.mae["ADE:H4'"]=0.072
-				self.mae["ADE:H5'"]=0.167
-				self.mae["ADE:H5''"]=0.093
-				self.mae["ADE:H8"]=0.164
-				self.mae["CYT:C1'"]=0.561
-				self.mae["CYT:C2"]=4.780
-				self.mae["CYT:C2'"]=0.452
-				self.mae["CYT:C3'"]=0.912
-				self.mae["CYT:C4'"]=0.397
-				self.mae["CYT:C5"]=0.452
-				self.mae["CYT:C5'"]=0.690
-				self.mae["CYT:C6"]=0.540
-				self.mae["CYT:H1'"]=0.160
-				self.mae["CYT:H2'"]=0.121
-				self.mae["CYT:H3'"]=0.099
-				self.mae["CYT:H4'"]=0.083
-				self.mae["CYT:H5"]=0.128
-				self.mae["CYT:H5'"]=0.134
-				self.mae["CYT:H5''"]=0.107
-				self.mae["CYT:H6"]=0.108
-				self.mae["GUA:C1'"]=0.797
-				self.mae["GUA:C2"]=1.711
-				self.mae["GUA:C2'"]=0.604
-				self.mae["GUA:C3'"]=0.936
-				self.mae["GUA:C4'"]=0.653
-				self.mae["GUA:C5'"]=0.782
-				self.mae["GUA:C8"]=0.888
-				self.mae["GUA:H1'"]=0.189
-				self.mae["GUA:H2'"]=0.119
-				self.mae["GUA:H3'"]=0.120
-				self.mae["GUA:H4'"]=0.077
-				self.mae["GUA:H5'"]=0.125
-				self.mae["GUA:H5''"]=0.106
-				self.mae["GUA:H8"]=0.186
-				self.mae["URA:C1'"]=0.671
-				self.mae["URA:C2"]=0.952
-				self.mae["URA:C2'"]=0.420
-				self.mae["URA:C3'"]=0.946
-				self.mae["URA:C4'"]=0.670
-				self.mae["URA:C5"]=0.922
-				self.mae["URA:C5'"]=0.891
-				self.mae["URA:C6"]=0.831
-				self.mae["URA:H1'"]=0.141
-				self.mae["URA:H2'"]=0.141
-				self.mae["URA:H3'"]=0.098
-				self.mae["URA:H4'"]=0.086
-				self.mae["URA:H5"]=0.162
-				self.mae["URA:H5'"]=0.136
-				self.mae["URA:H5''"]=0.094
-				self.mae["URA:H6"]=0.118
-			# MAE of the combined and other mode
-			# Average of the two above
-			else:
-				self.mae["ADE:C1'"]=0.692
-				self.mae["ADE:C2"]=0.624
-				self.mae["ADE:C2'"]=0.467
-				self.mae["ADE:C3'"]=0.976
-				self.mae["ADE:C4'"]=0.672
-				self.mae["ADE:C5'"]=0.866
-				self.mae["ADE:C8"]=0.676
-				self.mae["ADE:H1'"]=0.140
-				self.mae["ADE:H2"]=0.195
-				self.mae["ADE:H2'"]=0.123
-				self.mae["ADE:H3'"]=0.110
-				self.mae["ADE:H4'"]=0.073
-				self.mae["ADE:H5'"]=0.240
-				self.mae["ADE:H5''"]=0.113
-				self.mae["ADE:H8"]=0.163
-				self.mae["CYT:C1'"]=0.602
-				self.mae["CYT:C2'"]=0.716
-				self.mae["CYT:C3'"]=1.030
-				self.mae["CYT:C4'"]=0.507
-				self.mae["CYT:C5"]=1.199
-				self.mae["CYT:C5'"]=0.814
-				self.mae["CYT:C6"]=0.562
-				self.mae["CYT:H1'"]=0.136
-				self.mae["CYT:H2'"]=0.111
-				self.mae["CYT:H3'"]=0.106
-				self.mae["CYT:H4'"]=0.088
-				self.mae["CYT:H5"]=0.121
-				self.mae["CYT:H5'"]=0.223
-				self.mae["CYT:H5''"]=0.150
-				self.mae["CYT:H6"]=0.113
-				self.mae["GUA:C1'"]=0.739
-				self.mae["GUA:C2'"]=0.575
-				self.mae["GUA:C3'"]=0.899
-				self.mae["GUA:C4'"]=0.735
-				self.mae["GUA:C5'"]=0.838
-				self.mae["GUA:C8"]=0.801
-				self.mae["GUA:H1'"]=0.178
-				self.mae["GUA:H2'"]=0.131
-				self.mae["GUA:H3'"]=0.122
-				self.mae["GUA:H4'"]=0.076
-				self.mae["GUA:H5'"]=0.198
-				self.mae["GUA:H5''"]=0.114
-				self.mae["GUA:H8"]=0.194	
-				self.mae["URA:C1'"]=0.676
-				self.mae["URA:C2'"]=0.509
-				self.mae["URA:C3'"]=0.964
-				self.mae["URA:C4'"]=0.888
-				self.mae["URA:C5"]=0.742
-				self.mae["URA:C5'"]=0.813
-				self.mae["URA:C6"]=0.768
-				self.mae["URA:H1'"]=0.123
-				self.mae["URA:H2'"]=0.135
-				self.mae["URA:H3'"]=0.093
-				self.mae["URA:H4'"]=0.078
-				self.mae["URA:H5"]=0.141
-				self.mae["URA:H5'"]=0.220
-				self.mae["URA:H5''"]=0.107
-				self.mae["URA:H6"]=0.108			
+                self.mae["ADE:C1'"]=0.683
+                self.mae["ADE:C2"]=0.484
+                self.mae["ADE:C2'"]=0.462
+                self.mae["ADE:C3'"]=0.936
+                self.mae["ADE:C4'"]=0.636
+                self.mae["ADE:C5'"]=0.818
+                self.mae["ADE:C8"]=0.668
+                self.mae["ADE:H1'"]=0.166
+                self.mae["ADE:H2"]=0.185
+                self.mae["ADE:H2'"]=0.140
+                self.mae["ADE:H3'"]=0.107
+                self.mae["ADE:H4'"]=0.072
+                self.mae["ADE:H5'"]=0.167
+                self.mae["ADE:H5''"]=0.093
+                self.mae["ADE:H8"]=0.164
+                self.mae["CYT:C1'"]=0.561
+                self.mae["CYT:C2"]=4.780
+                self.mae["CYT:C2'"]=0.452
+                self.mae["CYT:C3'"]=0.912
+                self.mae["CYT:C4'"]=0.397
+                self.mae["CYT:C5"]=0.452
+                self.mae["CYT:C5'"]=0.690
+                self.mae["CYT:C6"]=0.540
+                self.mae["CYT:H1'"]=0.160
+                self.mae["CYT:H2'"]=0.121
+                self.mae["CYT:H3'"]=0.099
+                self.mae["CYT:H4'"]=0.083
+                self.mae["CYT:H5"]=0.128
+                self.mae["CYT:H5'"]=0.134
+                self.mae["CYT:H5''"]=0.107
+                self.mae["CYT:H6"]=0.108
+                self.mae["GUA:C1'"]=0.797
+                self.mae["GUA:C2"]=1.711
+                self.mae["GUA:C2'"]=0.604
+                self.mae["GUA:C3'"]=0.936
+                self.mae["GUA:C4'"]=0.653
+                self.mae["GUA:C5'"]=0.782
+                self.mae["GUA:C8"]=0.888
+                self.mae["GUA:H1'"]=0.189
+                self.mae["GUA:H2'"]=0.119
+                self.mae["GUA:H3'"]=0.120
+                self.mae["GUA:H4'"]=0.077
+                self.mae["GUA:H5'"]=0.125
+                self.mae["GUA:H5''"]=0.106
+                self.mae["GUA:H8"]=0.186
+                self.mae["URA:C1'"]=0.671
+                self.mae["URA:C2"]=0.952
+                self.mae["URA:C2'"]=0.420
+                self.mae["URA:C3'"]=0.946
+                self.mae["URA:C4'"]=0.670
+                self.mae["URA:C5"]=0.922
+                self.mae["URA:C5'"]=0.891
+                self.mae["URA:C6"]=0.831
+                self.mae["URA:H1'"]=0.141
+                self.mae["URA:H2'"]=0.141
+                self.mae["URA:H3'"]=0.098
+                self.mae["URA:H4'"]=0.086
+                self.mae["URA:H5"]=0.162
+                self.mae["URA:H5'"]=0.136
+                self.mae["URA:H5''"]=0.094
+                self.mae["URA:H6"]=0.118
+            # MAE of the combined and other mode
+            # Average of the two above
+            else:
+                self.mae["ADE:C1'"]=0.692
+                self.mae["ADE:C2"]=0.624
+                self.mae["ADE:C2'"]=0.467
+                self.mae["ADE:C3'"]=0.976
+                self.mae["ADE:C4'"]=0.672
+                self.mae["ADE:C5'"]=0.866
+                self.mae["ADE:C8"]=0.676
+                self.mae["ADE:H1'"]=0.140
+                self.mae["ADE:H2"]=0.195
+                self.mae["ADE:H2'"]=0.123
+                self.mae["ADE:H3'"]=0.110
+                self.mae["ADE:H4'"]=0.073
+                self.mae["ADE:H5'"]=0.240
+                self.mae["ADE:H5''"]=0.113
+                self.mae["ADE:H8"]=0.163
+                self.mae["CYT:C1'"]=0.602
+                self.mae["CYT:C2'"]=0.716
+                self.mae["CYT:C3'"]=1.030
+                self.mae["CYT:C4'"]=0.507
+                self.mae["CYT:C5"]=1.199
+                self.mae["CYT:C5'"]=0.814
+                self.mae["CYT:C6"]=0.562
+                self.mae["CYT:H1'"]=0.136
+                self.mae["CYT:H2'"]=0.111
+                self.mae["CYT:H3'"]=0.106
+                self.mae["CYT:H4'"]=0.088
+                self.mae["CYT:H5"]=0.121
+                self.mae["CYT:H5'"]=0.223
+                self.mae["CYT:H5''"]=0.150
+                self.mae["CYT:H6"]=0.113
+                self.mae["GUA:C1'"]=0.739
+                self.mae["GUA:C2'"]=0.575
+                self.mae["GUA:C3'"]=0.899
+                self.mae["GUA:C4'"]=0.735
+                self.mae["GUA:C5'"]=0.838
+                self.mae["GUA:C8"]=0.801
+                self.mae["GUA:H1'"]=0.178
+                self.mae["GUA:H2'"]=0.131
+                self.mae["GUA:H3'"]=0.122
+                self.mae["GUA:H4'"]=0.076
+                self.mae["GUA:H5'"]=0.198
+                self.mae["GUA:H5''"]=0.114
+                self.mae["GUA:H8"]=0.194    
+                self.mae["URA:C1'"]=0.676
+                self.mae["URA:C2'"]=0.509
+                self.mae["URA:C3'"]=0.964
+                self.mae["URA:C4'"]=0.888
+                self.mae["URA:C5"]=0.742
+                self.mae["URA:C5'"]=0.813
+                self.mae["URA:C6"]=0.768
+                self.mae["URA:H1'"]=0.123
+                self.mae["URA:H2'"]=0.135
+                self.mae["URA:H3'"]=0.093
+                self.mae["URA:H4'"]=0.078
+                self.mae["URA:H5"]=0.141
+                self.mae["URA:H5'"]=0.220
+                self.mae["URA:H5''"]=0.107
+                self.mae["URA:H6"]=0.108            
     
     def reset_measuredCS(self):
         self.measuredCS = {}
