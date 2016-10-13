@@ -1255,7 +1255,7 @@ class PyShiftsPlugin:
                 output_nitrogen[key] = np.abs(error)
             else:
                 continue                                 
-            output_total[key] = error
+            output_total[key] = np.abs(error)
             ntotal +=1
             total_error += np.abs(error)     
             cmd.alter("resi %s and n. %s"%(resid, nucleus), "b=%s"%error)                                 
@@ -1580,11 +1580,9 @@ class PyShiftsPlugin:
         
         # Loop over all possible sorting methods and save error table        
         # When metric = 'state'
-        self.larmord_error_metric = 'state'
-        metric = self.larmord_error_metric
-        tag = str('Sorted by ' + metric + ':\n')
+        tag = 'Sorted by state:\n'
         errorTable.write(tag)
-        self.printError(self.best_model_indices)
+        self.sort_state_number()
         value = self.error_table.get(1,'end')
         for dataline in value:
             dataline = dataline + '\n'
@@ -1816,9 +1814,6 @@ class PyShiftsPlugin:
     
     def saveCStable(self):
         flag = 'bound'
-        reverse = self.reverse.get()
-        if reverse != 0:
-            flag = 'free'
         objname = self.pymol_sel.get()
         filename = asksaveasfilename(initialdir = "saved_data/", initialfile = str('predicted_CS_table_' + objname + '.txt'))
         try:
