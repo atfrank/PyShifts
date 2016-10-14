@@ -217,7 +217,7 @@ class PyShiftsPlugin:
                                         label_text='Predicted Chemical Shift File:', labelpos='wn',
                                         entry_textvariable=self.larmord_cs2,
                                         entry_width=10)
-        self.balloon.bind(self.larmord_cs2_ent, "Path to predicted chemical shifts data (only applicable in 'Other' mode) \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - should match the state in the Pymol object to ensure accurate mapping of difference is subsequent analysis                                          \nresidue_number - same as above                                        \nresidue_name - same as above                                         \nnucleus_name - same as above                                    \nCS_values_1 - can be any value since it is ignored in this part                                         \nCS_values_2 - comparison chemical shifts that, for a given nucleus, may change with model_index ")
+        self.balloon.bind(self.larmord_cs2_ent, "Path to predicted chemical shifts data (only applicable in 'Other' mode) \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - should match the state in the Pymol object to ensure accurate mapping of difference is subsequent analysis                                          \nresidue_number - same as above                                        \nresidue_name - same as above                                         \nnucleus_name - same as above                                    \nCS_values_1 - comparison chemical shifts that, for a given nucleus, may change with model_index                                         \nCS_values_2 - can be any value since it is ignored in this part ")
         self.larmord_cs2_but = Tkinter.Button(group_struc, text = 'Browse...', command = self.getLarmordCS2)       
         
         self.larmord_cs2_but.configure(state = "disabled")
@@ -1120,7 +1120,7 @@ class PyShiftsPlugin:
                 larmord_tmpout_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord')
                 os.close(larmord_tmpout_os_fh)
                 if self.check_file(self.larmord_cs2.get()):
-                    larmord_cmd = 'awk -v model=%s \'{ if($1==model && NF==6) print $2, $3, $4, $5, $6}\' %s > %s' % (cmd.get_state(), self.larmord_cs2.get(), larmord_tmpout_fn)
+                    larmord_cmd = 'awk -v model=%s \'{ if($1==model && NF==6) print $2, $3, $4, $6, $5}\' %s > %s' % (cmd.get_state(), self.larmord_cs2.get(), larmord_tmpout_fn)
                 else:
                     self.print_file_error(self.larmord_cs2.get())            
                     return False
@@ -1806,7 +1806,7 @@ class PyShiftsPlugin:
                 expCS = self.measuredCS[key]
             except:
                 continue
-            dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resname, resid, nuclei, predCS)
+            dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resid, resname, nuclei, predCS)
             CStable.write(dataline)
         CStable.close()
         msg = 'Predicted chemical shifts and error has been saved to %s' %filename
@@ -1823,9 +1823,10 @@ class PyShiftsPlugin:
         try:
             self.sorted_residual
         except:
-            temp_dict = {}
-            temp_dict = eval('self.larmord_error_'+self.larmord_error_sel+'[1].copy()')
-            self.sorted_residual = sorted(temp_dict, key=temp_dict.get, reverse = True)                
+            self.currentstate = 1
+            self.sortResidual() 
+        heading = "{:<5} {:<5} {:<7} {:<7} {:<7} {:<7} {:<7}\n".format('state', 'resid', 'resname', 'nuclei', 'predCS', 'expCS', 'error')
+        CStable.write(heading)              
         for state in range(1,1+cmd.count_states("(all)")):
             for key in self.sorted_residual:
                 if key[0] == '0':
@@ -1840,7 +1841,7 @@ class PyShiftsPlugin:
                     error = self.larmord_error_all[state][key]
                 except:
                     continue                
-                dataline = "{:<3} {:<5} {:<3} {:<5} {:<7} {:<7} {:<7}\n".format(state, resname, resid, nuclei, predCS, expCS, error)
+                dataline = "{:<5} {:<5} {:<7} {:<7} {:<7} {:<7} {:<7}\n".format(state, resid, resname, nuclei, predCS, expCS, error)
                 CStable.write(dataline)
         CStable.close()
         return True        
