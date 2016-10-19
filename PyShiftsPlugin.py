@@ -1874,6 +1874,7 @@ class PyShiftsPlugin:
             e.g. highlight_selection("resi 1 and name H1' and test_1", scale=0.5, color="yellow")
             Taken from pymol.py by Dr.Frank
         """
+        scale = 1.2 * self.larmord_error_scale.get()
         # remove old hightlight
         cmd.delete("highlight")
         # get original view
