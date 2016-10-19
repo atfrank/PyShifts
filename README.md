@@ -7,10 +7,12 @@ Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics
 #### 1. Python
 - Python version of 2.7.10 (and 2.7.10 only), which is freely available at https://www.python.org/downloads/release/python-2710/.
 - If your current Python version is not 2.7.10, and you prefer not to change it, you can use the following commands to create a Python 2.7.10 environment temporarily for Pyshifts:
-            conda create -n pyshifts python=2.7.10
-            source active pyshifts
+
+        conda create -n pyshifts python=2.7.10
+        source active pyshifts
 After each use of Pyshifts, use 
-            source deactivate pyshifts
+         
+        source deactivate pyshifts
 to go back to your normal Python settings.
 
 #### 2. PyMOL 
