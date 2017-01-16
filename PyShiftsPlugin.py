@@ -191,7 +191,7 @@ class PyShiftsPlugin:
                             frame_borderwidth = 2,
                             frame_relief = 'groove',
                             )        
-        self.analyzeButton.add('Excute', command = self.runAnalysis)
+        self.analyzeButton.add('Execute', command = self.runAnalysis)
         self.analyzeButton.pack(fill='both', expand=True, padx=25, pady=25)
         self.analyzeButton.button(0).grid(sticky=N, row=0)
         group_struc.grid(row = 0, column = 0)
@@ -313,7 +313,7 @@ class PyShiftsPlugin:
         self.CS_table = Listbox(group_CStable,
             font = fixedFont,
             selectmode = BROWSE,
-            width = 50,
+            width = 52,
             height = 13,
             bd = 5,
             relief='ridge',
@@ -324,14 +324,14 @@ class PyShiftsPlugin:
         self.CS_table.pack(side=LEFT, fill = BOTH, expand = 1)
         self.CS_table.bind("<Double-Button-1>", self.seleRes)
         # Create the table header
-        self.CS_table.insert(1, 'Chemical shift Table'.center(50))
-        self.CStable_header = 'resname resid nuclei expCS predCS error'       
+        self.CS_table.insert(1, 'Chemical shift Table'.center(55))
+        self.CStable_header = 'resname resid nuclei expCS predCS weighted_error'       
         self.CStable_header = string.split(self.CStable_header) 
         
         # Create row headers  
         headerLine = ' '
         for column in range(len(self.CStable_header)):
-            headerLine = headerLine + ('%-7s ' % (self.CStable_header[column],))
+            headerLine = headerLine + ('%-6s ' % (self.CStable_header[column],))
         self.CS_table.insert('end', headerLine)
 
         # Chemical shift table sort - button box                
@@ -483,7 +483,7 @@ class PyShiftsPlugin:
                         hull_borderwidth = 2,
                         hull_relief = 'ridge',
                 )        
-        self.balloon.bind(self.wterror_radio, 'Should chemical differences should be scaled by the expected accuracy of LARMORD')
+        self.balloon.bind(self.wterror_radio, 'Should chemical differences should be scaled by the expected accuracy of your predictor')
         for text in ('Yes', 'No'):
             self.wterror_radio.add(text)
         self.wterror_radio.setvalue('Yes')        
@@ -991,7 +991,6 @@ class PyShiftsPlugin:
             measured_resid = expCS_data['resid']
             measured_nucleus = expCS_data['nucleus']
             measured_csvalue = expCS_data['expCS']                        
-            
             for res in range(len(measured_resid)):
                 k2 = str(str(measured_resid[res])+":"+measured_resname[res]+":"+measured_nucleus[res]).strip()
                 self.measuredCS[k2] = measured_csvalue[res]
@@ -1062,7 +1061,7 @@ class PyShiftsPlugin:
         os.close(larmord_tmpout_os_fh)
         return pdb_fn, larmord_tmpout_fn 
     
-    def combinedAnalysisOneState(self, sel_name, objname):
+    def combined_analysis_one_state(self, sel_name, objname):
         """
         For one state, compute chemical shifts for combined (using the average of Larmord and Ramsey) analysis
         Called in runAnalysisOneState and only executed when in 'Combined' mode
@@ -1105,7 +1104,7 @@ class PyShiftsPlugin:
         @param type: string, int
         """
         if (self.get_shifts_from_larmord and self.get_shifts_from_ramsey):
-            self.combinedAnalysisOneState(sel_name, objname)
+            self.combined_analysis_one_state(sel_name, objname)
         else:      
             if (self.get_shifts_from_larmord):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
@@ -1441,7 +1440,10 @@ class PyShiftsPlugin:
         
         self.disableAll()       
         # load MAEs
-        self.load_MAE()
+        if self.weighted_errors:
+        	self.load_MAE()
+        else:
+        	self.reset_MAE()
         
         lowerLimit = 10 * cmd.count_states("(all)")
         # Initialize error coefficients
@@ -1806,7 +1808,7 @@ class PyShiftsPlugin:
                 expCS = self.measuredCS[key]
             except:
                 continue
-            dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resid, resname, nuclei, predCS)
+            dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resname, resid, nuclei, predCS)
             CStable.write(dataline)
         CStable.close()
         msg = 'Predicted chemical shifts and error has been saved to %s' %filename
@@ -1823,10 +1825,9 @@ class PyShiftsPlugin:
         try:
             self.sorted_residual
         except:
-            self.currentstate = 1
-            self.sortResidual() 
-        heading = "{:<5} {:<5} {:<7} {:<7} {:<7} {:<7} {:<7}\n".format('state', 'resid', 'resname', 'nuclei', 'predCS', 'expCS', 'error')
-        CStable.write(heading)              
+            temp_dict = {}
+            temp_dict = eval('self.larmord_error_'+self.larmord_error_sel+'[1].copy()')
+            self.sorted_residual = sorted(temp_dict, key=temp_dict.get, reverse = True)                
         for state in range(1,1+cmd.count_states("(all)")):
             for key in self.sorted_residual:
                 if key[0] == '0':
@@ -1841,7 +1842,7 @@ class PyShiftsPlugin:
                     error = self.larmord_error_all[state][key]
                 except:
                     continue                
-                dataline = "{:<5} {:<5} {:<7} {:<7} {:<7} {:<7} {:<7}\n".format(state, resid, resname, nuclei, predCS, expCS, error)
+                dataline = "{:<3} {:<5} {:<3} {:<5} {:<7} {:<7} {:<7}\n".format(state, resname, resid, nuclei, predCS, expCS, error)
                 CStable.write(dataline)
         CStable.close()
         return True        
@@ -1864,7 +1865,7 @@ class PyShiftsPlugin:
                 expCS = self.measuredCS[key]
             except:
                 continue
-            dataline = "{:<7} {:<7} {:<7} {:<7,.1f} {:<7,.1f} {:<7,.1f}".format(resname, resid, nuclei, expCS, predCS, error)
+            dataline = "{:<7} {:<6} {:<6} {:<6,.1f} {:<8,.1f} {:<6,.1f}".format(resname, resid, nuclei, expCS, predCS, error)
             dataline = ' ' + dataline
             self.CS_table.insert('end', dataline)    
     
