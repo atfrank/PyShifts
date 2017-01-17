@@ -1,6 +1,10 @@
 \documentclass{article}
 
 \usepackage{amssymb}
+\usepackage{graphicx} 
+\usepackage{graphics}
+\graphicspath{{figures/}} 
+
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -8,7 +12,6 @@
     filecolor=magenta,      
     urlcolor=cyan,
 }
-
 \usepackage{listings}
 \usepackage{color}
 
@@ -32,7 +35,6 @@
   breakatwhitespace=true,
   tabsize=3
 }
-
 
 
 \begin{document}
@@ -105,7 +107,40 @@ Open PyMOL and then go to "Plugin"$\to$"Plugin manager"$\to$"Install new plugin"
 
 \subsection{Layout}
 
+Once you have Pyshifts successfully installed in PyMOL, you can see it under "Plugin" menubar. Click to run.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{layout_0.png}
+\caption{Run Pyshifts from PyMOL.}
+\label{fig:layout0}
+\end{figure}
+
+
+A new window will pop up. This is the main page of Pyshifts. Basic options will show in main page. At the top of the window is a progress bar. When running, progress bar will show the progress of your current operation. Under progress bar is the main menu bar. By clicking on those tabs you can switch back and forth among the four tabs: "Options" (default), "Error Analysis", "Advanced Options" and "About".
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{main}
+\caption{Pyshifts default window.}
+\label{fig:layout1}
+\end{figure}
+
 \subsection{Test case}
+To start with, let's first have a try on our test case. Test case is an NMR solution structure of a 14-mer hairpin RNA with cUUCGg tetraloop \href{http://www.rcsb.org/pdb/explore.do?structureId=2koc}{PDB: 2KOC}. The structure coordinates (2KOC\_test.pdb), reference chemical shifts (measured\_shifts\_2KOC.dat) and an example predicted chemical shifts file (predicted\_shifts\_2KOC.dat) are all included in "test" folder which comes with the original package. Or you can always download the "test" folder from github site \url{https://github.com/atfrank/PyShifts}.
+
+First, load structure into PyMOL as "test". In PyMOL command line, type in
+\begin{lstlisting}
+load test/2KOC_test.pdb, test
+\end{lstlisting}
+
+A structure will show in PyMOL window. This is frame of 2KOC, our test case.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{test_ensemble}
+\caption{Test ensemble in PyMOL.}
+\label{fig:test1}
+\end{figure}
 
 
 \newpage
