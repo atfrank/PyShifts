@@ -116,6 +116,7 @@ class PyShiftsPlugin:
         self.larmord_proton_offset = Tkinter.DoubleVar()
         self.larmord_carbon_offset = Tkinter.DoubleVar()
         self.larmord_nitrogen_offset = Tkinter.DoubleVar()
+        self.larmord_outlier_threshold = Tkinter.DoubleVar()
         self.get_shifts_from_larmord = True
         self.get_shifts_from_ramsey = True
         self.get_shifts_from_file = False
@@ -510,7 +511,16 @@ class PyShiftsPlugin:
                                        entry_textvariable=self.larmord_nitrogen_offset,
                                        )
         self.balloon.bind(self.larmord_nitrogen_offset_ent, 'offset to add to the reference 15N chemical shifts -- useful if reference shifts are known to be systematically mis-referenced')
-                
+
+        # outlier threshold
+        self.larmord_outlier_threshold_ent = Pmw.EntryField(group_scale, value=9999.0,
+                                                        label_text='Outlier Threshold:',
+                                                        labelpos='wn',
+                                                        entry_textvariable=self.larmord_outlier_threshold,
+                                                        )
+        self.balloon.bind(self.larmord_outlier_threshold_ent,
+                          'outlier_threshold -- predictions that exhibit errors that outlier_threshold x the expected error will be ignored was determining the overall error of a given structural model')
+
         # Specify accuracy file
         # load MAE from file if given 
         # MAE: estimated mean absolute error between measured and larmord predicted chemical shifts for a certain nucleus type
@@ -556,11 +566,12 @@ class PyShiftsPlugin:
         self.larmord_proton_offset_ent.grid(sticky='we', row=1, column=0, columnspan=2, pady=pady, padx=padx)
         self.larmord_carbon_offset_ent.grid(sticky='we', row=2, column=0, columnspan=2, pady=pady, padx=padx)
         self.larmord_nitrogen_offset_ent.grid(sticky='we', row=3, column=0, columnspan=2, pady=pady, padx=padx)
-        self.larmord_acc_ent.grid(sticky='we', row=4, column=0, columnspan=1,  pady=pady, padx=padx)
-        self.larmord_acc_but.grid(sticky='we', row=4, column=1, columnspan=1, pady=pady, padx=padx)
-        self.error_color_ent.grid(sticky='we', row=5, column=0, columnspan=2, pady=pady, padx=padx)
-        self.error_scale_ent.grid(sticky='we', row=6, column=0, columnspan=2, pady=pady, padx=padx)
-        self.error_ndisplay_ent.grid(sticky='we', row=7, column=0, columnspan=2, pady=pady, padx=padx)
+        self.larmord_outlier_threshold_ent.grid(sticky='we', row=4, column=0, columnspan=2, pady=pady, padx=padx)
+        self.larmord_acc_ent.grid(sticky='we', row=5, column=0, columnspan=1,  pady=pady, padx=padx)
+        self.larmord_acc_but.grid(sticky='we', row=5, column=1, columnspan=1, pady=pady, padx=padx)
+        self.error_color_ent.grid(sticky='we', row=6, column=0, columnspan=2, pady=pady, padx=padx)
+        self.error_scale_ent.grid(sticky='we', row=7, column=0, columnspan=2, pady=pady, padx=padx)
+        self.error_ndisplay_ent.grid(sticky='we', row=8, column=0, columnspan=2, pady=pady, padx=padx)
 
         group_advanc.grid(row=0, column=0)
         page.columnconfigure(0, weight=1)
@@ -1216,20 +1227,33 @@ class PyShiftsPlugin:
             resid, resname, nucleus = key.split(":")
             predCS = self.predictedCS[state_number - 1][key]
             k1 = (ch, resid, resname, nucleus)
-            k2 = str(resname+":"+nucleus).strip()  
-            # try to get measured chemical shifts for each predicted value
-            try:
-                expCS = self.measuredCS[key]
-                list_expCS.append(expCS)
-                list_predCS.append(predCS)
-            except:
-                continue
-                     
-            # try to get mae
+            k2 = str(resname+":"+nucleus).strip()                       
+
+            # try to get mae (expected error)
             try:
                 mae = self.mae[k2] 
             except:
                 mae = 1.0           
+                        
+            # try to get measured chemical shifts for each predicted value
+            try:
+                expCS = self.measuredCS[key]
+
+                # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
+                if nucleus in self.carbon_list:
+                    if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                if nucleus in self.proton_list:
+                    if (np.abs(predCS - expCS - self.larmord_proton_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                if nucleus in self.nitrogen_list:
+                    if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                
+                list_expCS.append(expCS)
+                list_predCS.append(predCS)
+            except:
+                continue
             
             if nucleus in self.carbon_list:
                 error = (predCS - expCS - self.larmord_carbon_offset.get())/mae
@@ -1441,9 +1465,9 @@ class PyShiftsPlugin:
         self.disableAll()       
         # load MAEs
         if self.weighted_errors:
-        	self.load_MAE()
+          self.load_MAE()
         else:
-        	self.reset_MAE()
+          self.reset_MAE()
         
         lowerLimit = 10 * cmd.count_states("(all)")
         # Initialize error coefficients
@@ -1802,13 +1826,32 @@ class PyShiftsPlugin:
             if key[0] == '0':
                 key = key[1:]
             predCS = self.predictedCS[state - 1][key]
-            resid, resname, nuclei = key.split(':')
+            resid, resname, nucleus = key.split(':')
+
+            # try to get mae (expected error)
+            k2 = str(resname+":"+nucleus).strip()
+            try:
+                mae = self.mae[k2] 
+            except:
+                mae = 1.0           
+            
             try:
                 error = self.larmord_error_all[state][key]
                 expCS = self.measuredCS[key]
+                # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
+                if nucleus in self.carbon_list:
+                    if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                if nucleus in self.proton_list:
+                    if (np.abs(predCS - expCS - self.larmord_proton_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                if nucleus in self.nitrogen_list:
+                    if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                
             except:
                 continue
-            dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resname, resid, nuclei, predCS)
+            dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resname, resid, nucleus, predCS)
             CStable.write(dataline)
         CStable.close()
         msg = 'Predicted chemical shifts and error has been saved to %s' %filename
@@ -1832,17 +1875,37 @@ class PyShiftsPlugin:
             for key in self.sorted_residual:
                 if key[0] == '0':
                     key = key[1:]
-                predCS = "%.3f" %self.predictedCS[state - 1][key]
-                resid, resname, nuclei = key.split(':')
+                predCS = self.predictedCS[state - 1][key]
+                resid, resname, nucleus = key.split(':')
+
+                # try to get mae (expected error)
+                k2 = str(resname+":"+nucleus).strip()
                 try:
-                    expCS = "%.3f" %self.measuredCS[key]
+                    mae = self.mae[k2] 
+                except:
+                    mae = 1.0           
+                
+                try:
+                    expCS = self.measuredCS[key]
+                    # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
+                    if nucleus in self.carbon_list:
+                        if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                            continue
+                    if nucleus in self.proton_list:
+                        if (np.abs(predCS - expCS - self.larmord_proton_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                            continue
+                    if nucleus in self.nitrogen_list:
+                        if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                            continue
+                    expCS = "%.3f" %expCS
+                    predCS = "%.3f" %predCS
                 except:
                     continue
                 try:
                     error = self.larmord_error_all[state][key]
                 except:
                     continue                
-                dataline = "{:<3} {:<5} {:<3} {:<5} {:<7} {:<7} {:<7}\n".format(state, resname, resid, nuclei, predCS, expCS, error)
+                dataline = "{:<3} {:<5} {:<3} {:<5} {:<7} {:<7} {:<7}\n".format(state, resname, resid, nucleus, predCS, expCS, error)
                 CStable.write(dataline)
         CStable.close()
         return True        
@@ -1859,13 +1922,31 @@ class PyShiftsPlugin:
             if key[0] == '0':
                 key = key[1:]
             predCS = self.predictedCS[state - 1][key]
-            resid, resname, nuclei = key.split(':')
+            resid, resname, nucleus = key.split(':')
+            
+            # try to get mae (expected error)
+            k2 = str(resname+":"+nucleus).strip()
+            try:
+                mae = self.mae[k2] 
+            except:
+                mae = 1.0           
+            
             try:
                 error = self.larmord_error_all[state][key]
                 expCS = self.measuredCS[key]
+                # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
+                if nucleus in self.carbon_list:
+                    if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                if nucleus in self.proton_list:
+                    if (np.abs(predCS - expCS - self.larmord_proton_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
+                if nucleus in self.nitrogen_list:
+                    if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        continue
             except:
                 continue
-            dataline = "{:<7} {:<6} {:<6} {:<6,.1f} {:<8,.1f} {:<6,.1f}".format(resname, resid, nuclei, expCS, predCS, error)
+            dataline = "{:<7} {:<6} {:<6} {:<6,.1f} {:<8,.1f} {:<6,.1f}".format(resname, resid, nucleus, expCS, predCS, error)
             dataline = ' ' + dataline
             self.CS_table.insert('end', dataline)    
     
