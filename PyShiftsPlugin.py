@@ -1428,6 +1428,11 @@ class PyShiftsPlugin:
         sel_name = self.check_selection(sel)        
         if (not sel_name):
           return False
+          
+        # check files
+        if not self.check_file(self.larmord_cs.get()):
+            self.print_file_error(self.larmord_cs.get()) 
+            return False        
     
         # each object in the selection is treated as an independent struc
         cmd.enable(sel_name) # enable selection
@@ -2066,23 +2071,19 @@ class PyShiftsPlugin:
         """ Run the cmd represented by the botton clicked by user.
         """        
         if butcmd == 'OK':
-            print 'is everything OK?'
-            
-        elif butcmd == 'Execute':
-            rtn = self.runAnalysis()    
+            print 'is everything OK?'                        
+        elif butcmd == 'Execute':            
+            rtn = self.runAnalysis()                                           
             if rtn and VERBOSE:
-                 print 'Done with Larmord!'               
-                 
+                 print 'Done with Larmord!'                                
         elif butcmd == 'Compare Shifts':
             rtn = self.runCompare()
             if rtn and VERBOSE:
-                 print 'Done comparing chemical shifts!' 
-            
+                 print 'Done comparing chemical shifts!'             
         elif butcmd == 'Sort':
             rtn = self.runSort()
             if rtn and VERBOSE:
-                 print 'Done rendering chemical shift errors!'
-    
+                 print 'Done rendering chemical shift errors!'    
         elif butcmd == 'Exit':
             print 'Exiting PyShifts Plugin ...'
             if __name__ == '__main__':
