@@ -126,6 +126,19 @@ A new window will pop up. This is the main page of Pyshifts. Basic options will 
 \label{fig:layout1}
 \end{figure}
 
+
+
+\subsection{Global parameter}
+Pyshifts use LarmorD as one of its predictor. Before we start working on test case, first you have to set file path to LarmorD parameters correctly. To do this, create a file "pymolrc" under your root folder
+\begin{lstlisting}
+vi ~/.pymolrc
+\end{lstlisting}
+Under insert mode, add a line to that file
+\begin{lstlisting}
+cd /Users/jingrux/Documents/GitSoftware/Pyshifts
+\end{lstlisting}
+
+
 \subsection{Test case}
 To start with, let's first have a try on our test case. Test case is an NMR solution structure of a 14-mer hairpin RNA with cUUCGg tetraloop \href{http://www.rcsb.org/pdb/explore.do?structureId=2koc}{PDB: 2KOC}. The structure coordinates (2KOC\_test.pdb), reference chemical shifts (measured\_shifts\_2KOC.dat) and an example predicted chemical shifts file (predicted\_shifts\_2KOC.dat) are all included in "test" folder which comes with the original package. Or you can always download the "test" folder from github site \url{https://github.com/atfrank/PyShifts}.
 
@@ -142,15 +155,59 @@ A structure will show in PyMOL window. This is frame of 2KOC, our test case.
 \label{fig:test1}
 \end{figure}
 
+In Pyshifts window, find the corresponding file and enter in "Chemical Shifts File" entry. The measured chemical shifts for 2KOC is provided as measured\_shifts\_2KOC.dat in "test" folder. 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{test2}
+\caption{Test measured chemical shifts file}
+\label{fig:test2}
+\end{figure}
 
+Click on 'execute' button. It may take some time for Pyshifts to complete computing.The progress bar will show your progress in percentage.
+
+Then go to "Error Analysis" tab, click on "Compare shifts". Error Table on the left will be filled with state number and their corresponding MAE (mean absolute error), Pearson coefficient, RMSE (Root mean square error). We will talk about it later in "Error Analysis" section. The table is by default sorted in MAE ascending order.
+
+At the meantime the first few states on top of error table will show in PyMOL. Error for each residues are shown in spheres of different size and color. 
+
+ 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{test3}
+\caption{Test error analysis overview}
+\label{fig:test3}
+\end{figure}
+ 
+Then double click on one of the state in "Error Table", "Chemical shift Table" will be filled with all the individual residue in your selected state. Each residual is specified by residue name (resname), residue id (resid), nuclei, experimental chemical shifts (expCS) given by the reference file, predicted chemical shifts (predCS) given by built-in predictor, and weighted error (weighted\_error) between them.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{test4}
+\caption{Test Chemical shift table and a single state in PyMOL}
+\label{fig:test4}
+\end{figure}
+
+At the meantime the state you chose will be enlarged in PyMOL window, showing details of that state.
+
+If you double click on one row in chemical shift, that specific residual will also be highlighted in PyMOL.
+
+In the following three sections, detailed configuration and usage will be introduced.
 \newpage
 \section{Options (Setup)}
 
 \subsection{PyMOL selection/object}
+PyMOL selection/object should be a valid name of a Pymol object that has been loaded. For example if you load a 2LPS.pdb file into PyMOL and name the object as "batman", then you should use "batman" in PyMOL selection/object entry (rather than 2LPS).
+ 
 \subsection{Mode}
 \subsubsection{Using predictor}
-\subsubsection{Using external predicted chemical shifts file}
+Pyshifts provided you with two predictors and three modes: LarmorD, Ramsey or a combination of them. By default Pyshifts use combined mode to realize a high accuracy of prediction. In this mode, both LarmorD and Ramsey are used for prediction, and an average of them will be taken for analysis.
 
+In each of the three modes, only one chemical shifts file is needed. The bottom line "Predicted Chemical Shift File" will be disabled.
+\subsubsection{Using external predicted chemical shifts file}
+The last mode in Mode selection, "Other" is somehow different from all other modes. In this mode, Pyshifts will not run predictor, rather, it will use the predicted chemical shifts data you provided. 
+
+In this mode, two chemical shifts files should be provided: one measured chemical shifts, one set of chemical shifts for all states as reference, same as before; and another predicted measured chemical shifts file, which contains the predicted chemical shifts for each residue in each mode. The bottom line "Predicted Chemical Shift File" will be put into use.
+
+An example predicted chemical shifts file for 2KOC is also given in "test" folder. You can play around with "Other" mode in our test case using this file.
 
 \newpage
 \section{Error Analysis}
