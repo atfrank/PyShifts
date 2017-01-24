@@ -37,6 +37,7 @@
 }
 
 
+
 \begin{document}
 \title{Pyshifts User Guide}
 \author{Jingru Xie}
@@ -212,22 +213,60 @@ An example predicted chemical shifts file for 2KOC is also given in "test" folde
 \newpage
 \section{Error Analysis}
 \subsection{Error Table}
+Error Table shows the difference between measured predicted chemical shifts of each state based on three metrics: MAE, Pearson matrix coefficient and RMSE. For a structure with $N$ nuclei, MAE and RMSE are computed as follows:
+$$MAE = \frac{1}{N}\sum_{n=1}^{N} |measuredCS[i]-predictedCS[i]|$$
+$$RMSE = \frac{1}{N}\sum_{n=1}^{N} (measuredCS[i]-predictedCS[i])^2$$
+Where $measredCS[i]$ ($predictedCS[i]$) denotes measured (predicted) chemical shift for the $ith$ nucleus.
+Pearson coefficient is computed using Python function $scipy.stats.pearsonr$.
+
+By default the summation goes over all kinds of nuclei in the structure (provided that nucleus has chemical shifts data given). You can also make Pyshifts only calculate the error of either carbons, hydrogens or nitrogens. This can be achieved using Nuclei selection.
+
 \subsubsection{Sort table: Nuclei and Metric}
+Error table can be sorted based on a combination of different nuclei and metric by changing selections in the lower row.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{sort_error_table_copy}
+\caption{Sort error table based on different nuclei and metrics}
+\label{fig:error_analysis_1}
+\end{figure}
+When Nuclei selection in selections other than "all", only selected group of residues will be used to calculate error and only shown in chemical shift table and Pymol.
+
+Note after you change your selection of nuclei or metric, use "sort" button to realize change.
+
 \subsection{Chemical Shifts Table}
+Chemical shifts (both predicted and measured) and "weighted erorr" are displayed in chemical shifts table for each individual nuclei in your selected state. 
+
+Weighted error is calculated based on the difference between predicted and measured chemical shifts and predictor accuracy:
+$$weighted_error[i] = \frac{predictedCS-measuredCS}{accuracy[i]}$$
+Predictor accuracy can be customized by providing an accuracy file, or you can choose not to weight the errors in advanced options. (See next chapter)
 \subsubsection{Sort table}
+Chemical shift Table can be sorted by residue id ascended or in error descending order.
+
 \subsection{Save to file}
+Both error table and chemical shift table can be saved to a .dat file. Tables should have been filled in Pyshifts before they can be saved. If you only want to save the chemical shifts data of your selected state, use "Save single state".
 
 
 \newpage
 \section{Advanced options}
 \subsection{Scale Differences}
+Predictor yield different errors for different nuclei. "Scale Differences" take predictor error into account. When in "Yes", errors used for analysis will be weighted error (absolute error divided by weight, which is given as accuracy file, or default setting in code).
 \subsection{Offset}
+"Offset" option can shift the error of a certain kind of nuclei, to account for chemical shifts offset that always exist in NMR measurements.
 \subsection{Accuracy File}
+Optional. Weight used to scale difference is given in accuracy file. When not given, a default LarmorD accuracy list will be used. 
 \subsection{Rendering options}
+\begin{enumerate}
+\item{Colors}
+
+Colors used to render error spheres in Pymol. Default setting is "blue\_white\_red", which will show negative error as blue, positive as red, while zero error is white.
+\item{Sphere size}
+
+A scale of how large the error sphere will show in Pymol. Depending on the weighted error of you specific case, this option should be adjusted to give the best visualizing performance. Default setting is $0.4$.
+\item{No. models to display}
+
+Number of models to display. How many models to display in Pymol after each Comparing shifts and sorting behavior. Default is 10.
+\end{enumerate}
+
 
 
 \end{document}
-
-
-
-
