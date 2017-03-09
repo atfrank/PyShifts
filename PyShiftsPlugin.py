@@ -1148,20 +1148,31 @@ class PyShiftsPlugin:
         return True                             
     
     ## Functions related to self.runCompare()
-    def mean_squared_error(self,x,y):
-        # Calculate the mean squared error of two vectors x,y
+    def root_mean_square_error(self,x,y,mae):
+        # Calculate the root mean square error of two vectors x,y
         # Avoid dependence on python packages
-        rms = 0.0
+        mse = 0.0 # mean square error
         N = len(x)
-        if len(x)!=len(y):
+        if len(x)!=len(y) or len(x)!=len(mae):
             return False
         for k in range(len(x)):
-            rms = rms + (x[k]-y[k])*(x[k]-y[k])
+            mse = mse + (x[k]-y[k])*(x[k]-y[k])/(mae[k]*mae[k])
         try:
-            rms = rms/N
+            rmse = np.sqrt(mse/N)
         except:
             return 0
-        return rms
+        return rmse
+        
+    def getMAE(self, error, nOfAtoms):
+    	'''
+    	error: total error
+    	nOfAtoms: total number of atoms
+    	'''
+    	try:
+    		mae = error/nOfAtoms
+    	except:
+    		return 0.0
+    	return mae
     
     def computePearson(self, nucleus, output_nucleus, nnucleus, state_number):
         # Compute Pearson coefficients between exp. and pred. data 
@@ -1220,6 +1231,10 @@ class PyShiftsPlugin:
         list_predCS_carbon = []
         list_predCS_proton = []
         list_predCS_nitrogen = []
+        list_mae = []
+        list_mae_carbon = []
+        list_mae_proton = []
+        list_mae_nitrogen = []
     
         # load measured Chemical Shifts data
         for key in self.predictedCS[state_number - 1].keys():
@@ -1227,14 +1242,14 @@ class PyShiftsPlugin:
             resid, resname, nucleus = key.split(":")
             predCS = self.predictedCS[state_number - 1][key]
             k1 = (ch, resid, resname, nucleus)
-            k2 = str(resname+":"+nucleus).strip()                       
+            k2 = str(resname+":"+nucleus).strip() 
 
             # try to get mae (expected error)
             try:
                 mae = self.mae[k2] 
             except:
-                mae = 1.0           
-                        
+                mae = 1.0
+ 
             # try to get measured chemical shifts for each predicted value
             try:
                 expCS = self.measuredCS[key]
@@ -1249,11 +1264,12 @@ class PyShiftsPlugin:
                 if nucleus in self.nitrogen_list:
                     if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
                         continue
-                
+
                 list_expCS.append(expCS)
                 list_predCS.append(predCS)
             except:
                 continue
+            list_mae.append(mae)
             
             if nucleus in self.carbon_list:
                 error = (predCS - expCS - self.larmord_carbon_offset.get())/mae
@@ -1261,6 +1277,7 @@ class PyShiftsPlugin:
                 ncarbons += 1
                 list_expCS_carbon.append(expCS)
                 list_predCS_carbon.append(predCS)
+                list_mae_carbon.append(mae)
                 output_carbon[key] = np.abs(error)
             elif nucleus in self.proton_list:
                 error = (predCS - expCS - self.larmord_proton_offset.get())/mae
@@ -1268,6 +1285,7 @@ class PyShiftsPlugin:
                 nprotons += 1
                 list_expCS_proton.append(expCS)
                 list_predCS_proton.append(predCS)
+                list_mae_proton.append(mae)
                 output_proton[key] = np.abs(error)
             elif nucleus in self.nitrogen_list:
                 error = (predCS - expCS - self.larmord_nitrogen_offset.get())/mae
@@ -1275,6 +1293,7 @@ class PyShiftsPlugin:
                 nnitrogens += 1
                 list_expCS_nitrogen.append(expCS)
                 list_predCS_nitrogen.append(predCS)
+                list_mae_nitrogen.append(mae)
                 output_nitrogen[key] = np.abs(error)
             else:
                 continue                                 
@@ -1286,31 +1305,29 @@ class PyShiftsPlugin:
         # all shifts
         pearson = self.computePearson('total', output_total, ntotal, state_number)
         self.Pearson_coef.append(pearson)
-        RMSE = sqrt(self.mean_squared_error(list_predCS, list_expCS))
+        RMSE = self.root_mean_square_error(list_predCS, list_expCS, list_mae)
         self.RMSE_coef.append(RMSE)
         
         # carbon shifts
         pearson = self.computePearson('carbon', output_carbon, ncarbons, state_number)
         self.Pearson_carbon.append(pearson)
-        RMSE = sqrt(self.mean_squared_error(list_predCS_carbon, list_expCS_carbon))
+        RMSE = self.root_mean_square_error(list_predCS_carbon, list_expCS_carbon, list_mae_carbon)
         self.RMSE_carbon.append(RMSE)
         
         # proton shifts
         pearson = self.computePearson('proton', output_proton, nprotons, state_number)
         self.Pearson_proton.append(pearson)     
-        RMSE = sqrt(self.mean_squared_error(list_predCS_proton, list_expCS_proton))
+        RMSE = self.root_mean_square_error(list_predCS_proton, list_expCS_proton, list_mae_proton)
         self.RMSE_proton.append(RMSE)
     
         # nitrogen shifts
         pearson = self.computePearson('nitrogen', output_nitrogen, nnitrogens, state_number)
         self.Pearson_nitrogen.append(pearson)     
-        RMSE = sqrt(self.mean_squared_error(list_predCS_nitrogen, list_expCS_nitrogen))
+        RMSE = self.root_mean_square_error(list_predCS_nitrogen, list_expCS_nitrogen, list_mae_nitrogen)
         self.RMSE_nitrogen.append(RMSE)
                         
         print 'Complete calculating error for state %d' %state_number
-        if nnitrogens==0:
-            return total_error/ntotal, carbon_error/ncarbons, proton_error/nprotons, 0.0, output_total, output_carbon, output_proton, output_nitrogen
-        return total_error/ntotal, carbon_error/ncarbons, proton_error/nprotons, nitrogen_error/nnitrogens, output_total, output_carbon, output_proton, output_nitrogen     
+        return self.getMAE(total_error, ntotal), self.getMAE(carbon_error, ncarbons), self.getMAE(proton_error, nprotons), self.getMAE(nitrogen_error, nnitrogens), output_total, output_carbon, output_proton, output_nitrogen     
     
     ## Functions related to self.runSort()
     def render_larmord_errors(self, objname, type, scale):
@@ -1428,12 +1445,12 @@ class PyShiftsPlugin:
         sel_name = self.check_selection(sel)        
         if (not sel_name):
           return False
-          
+    
         # check files
         if not self.check_file(self.larmord_cs.get()):
             self.print_file_error(self.larmord_cs.get()) 
-            return False        
-    
+            return False    
+
         # each object in the selection is treated as an independent struc
         cmd.enable(sel_name) # enable selection
         objlist = cmd.get_object_list(sel_name)                
@@ -1470,9 +1487,9 @@ class PyShiftsPlugin:
         self.disableAll()       
         # load MAEs
         if self.weighted_errors:
-          self.load_MAE()
+        	self.load_MAE()
         else:
-          self.reset_MAE()
+        	self.reset_MAE()
         
         lowerLimit = 10 * cmd.count_states("(all)")
         # Initialize error coefficients
@@ -1564,8 +1581,8 @@ class PyShiftsPlugin:
     def printError(self, orderList):
         """
         Print MAE and correlation coefficients between predicted and measured CS for each state in the following format:
-        state || MAE || P coef || K coef || S coef
-        print error and coef.s row by row in chosen order given by orderList
+        state || MAE || P coef || RMSE
+        print error and coefs row by row in chosen order given by orderList
         @param orderList: control the order that the table to be printed in
         @param type: list
         """
@@ -1838,8 +1855,7 @@ class PyShiftsPlugin:
             try:
                 mae = self.mae[k2] 
             except:
-                mae = 1.0           
-            
+                mae = 1.0   
             try:
                 error = self.larmord_error_all[state][key]
                 expCS = self.measuredCS[key]
@@ -1853,7 +1869,6 @@ class PyShiftsPlugin:
                 if nucleus in self.nitrogen_list:
                     if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
                         continue
-                
             except:
                 continue
             dataline = "{:<7} {:<7} {:<7} {:<7,.3f}\n".format(resname, resid, nucleus, predCS)
@@ -1888,8 +1903,8 @@ class PyShiftsPlugin:
                 try:
                     mae = self.mae[k2] 
                 except:
-                    mae = 1.0           
-                
+                    mae = 1.0    
+
                 try:
                     expCS = self.measuredCS[key]
                     # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
@@ -1934,11 +1949,11 @@ class PyShiftsPlugin:
             try:
                 mae = self.mae[k2] 
             except:
-                mae = 1.0           
-            
+                mae = 1.0  
             try:
                 error = self.larmord_error_all[state][key]
                 expCS = self.measuredCS[key]
+                
                 # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
                 if nucleus in self.carbon_list:
                     if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
@@ -2071,19 +2086,19 @@ class PyShiftsPlugin:
         """ Run the cmd represented by the botton clicked by user.
         """        
         if butcmd == 'OK':
-            print 'is everything OK?'                        
-        elif butcmd == 'Execute':            
-            rtn = self.runAnalysis()                                           
+            print 'is everything OK?'    
+        elif butcmd == 'Execute':
+            rtn = self.runAnalysis()    
             if rtn and VERBOSE:
-                 print 'Done with Larmord!'                                
+                 print 'Done with Larmord!'               
         elif butcmd == 'Compare Shifts':
             rtn = self.runCompare()
             if rtn and VERBOSE:
-                 print 'Done comparing chemical shifts!'             
+                 print 'Done comparing chemical shifts!' 
         elif butcmd == 'Sort':
             rtn = self.runSort()
             if rtn and VERBOSE:
-                 print 'Done rendering chemical shift errors!'    
+                 print 'Done rendering chemical shift errors!'
         elif butcmd == 'Exit':
             print 'Exiting PyShifts Plugin ...'
             if __name__ == '__main__':
