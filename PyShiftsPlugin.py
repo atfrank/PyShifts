@@ -193,7 +193,7 @@ class PyShiftsPlugin:
                             frame_relief = 'groove',
                             )        
         self.analyzeButton.add('Execute', command = self.runAnalysis)
-        self.analyzeButton.pack(fill='both', expand=True, padx=25, pady=25)
+        #self.analyzeButton.pack(fill='both', expand=True, padx=25, pady=25)
         self.analyzeButton.button(0).grid(sticky=N, row=0)
         group_struc.grid(row = 0, column = 0)
         self.analyzeButton.grid(sticky=N, row=1)
@@ -406,7 +406,7 @@ class PyShiftsPlugin:
         # Arrange widgets using grid
         padx=5
         pady=5              
-        self.topheader.grid(row=0)
+        #self.topheader.grid(row=0)
         self.error_table.grid(sticky=W, row=1, column=0, rowspan = 15, columnspan = 30, padx=padx, pady=pady)
         group_CStable.grid(sticky=W, row=1, column=40, rowspan = 15, columnspan = 50, padx=padx, pady=pady)
         self.save_CStable.grid(sticky=W, row=16, column=0, rowspan = 1, columnspan = 60, padx=padx, pady=pady)
