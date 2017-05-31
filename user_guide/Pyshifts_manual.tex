@@ -70,7 +70,7 @@ This PyMOL Plugin is Copyright\textcopyright 2016 by Jingru Xie (\href{mailto:ji
 \newpage
 \section{Installation}
 \subsection{Requirements}
-Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics tool. Python of version 2.7.10 and PyMOL are REQUIRED for Pyshifts.
+Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics tool. Python of version 2.7.10 and PyMOL are REQUIRED for Pyshifts. Larmord package is also required to enable chemical shifts prediction.
 
 
 \subsection{Installation guide}
@@ -92,12 +92,30 @@ source deactivate pyshifts
 to go back to your normal Python settings.
 \item{PyMOL}
 
-You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.
+You can obtain PYMOL at \href{https://sourceforge.net/projects/pymol/}{sourceforge}.
 
 \item{Adding Pyshifts to PyMOL}
 
 Download or clone this git repository.
-Open PyMOL and then go to "Plugin"$\to$"Plugin manager"$\to$"Install new plugin", and choose the Pyshifts.py file in your local Pyshifts repository. For this step PyMOL need to be run with the Tcl/Tk interface, read more on PyMOL wiki \url{https://pymolwiki.org/index.php/Plugins}.
+Open PyMOL and then go to "Plugin"$\to$"Plugin manager"$\to$"Install new plugin", and choose the Pyshifts.py file in your local Pyshifts repository. For this step PyMOL need to be run with the Tcl/Tk interface, read more on \href{https://pymolwiki.org/index.php/Plugins}{PyMOL wiki}.
+
+
+\item{Get Lamord package}
+
+Larmord can be obtained from \href{http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data}{University of Michigan Tech Transfer}, free of charge if not for commercial use. You also have to set LARMORD\_BIN path in your environment. For example, if the path to Larmord package is 
+$/Software/LarmorD\_New-master/$, you should do
+
+\begin{lstlisting}
+vi ~/.bashrc
+\end{lstlisting}
+
+in command line and insert the following line: 
+
+\begin{lstlisting}
+export LARMORD_BIN=/Software/LarmorD\_New-master/bin
+\end{lstlisting}
+
+
 
 \end{enumerate}
 
@@ -237,7 +255,7 @@ Note after you change your selection of nuclei or metric, use "sort" button to r
 Chemical shifts (both predicted and measured) and "weighted erorr" are displayed in chemical shifts table for each individual nuclei in your selected state. 
 
 Weighted error is calculated based on the difference between predicted and measured chemical shifts and predictor accuracy:
-$$weighted_error[i] = \frac{predictedCS-measuredCS}{accuracy[i]}$$
+$$weighted\_error[i] = \frac{predictedCS-measuredCS}{accuracy[i]}$$
 Predictor accuracy can be customized by providing an accuracy file, or you can choose not to weight the errors in advanced options. (See next chapter)
 \subsubsection{Sort table}
 Chemical shift Table can be sorted by residue id ascended or in error descending order.
