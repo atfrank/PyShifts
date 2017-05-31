@@ -22,8 +22,16 @@ You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.
 - Download or clone this git repository.
 - Open PyMOL and then go to Plugin -> Plugin manager -> Install new plugin, and choose the Pyshifts.py file in your local Pyshifts repository. For this step PyMOL need to be run with the Tcl/Tk interface, read more on PyMOL wiki https://pymolwiki.org/index.php/Plugins.
 
+#### 4. Get Lamord package
+- Larmord can be obtained from http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data, free of charge if not for commercial use. 
+- You also have to set LARMORD_BIN path in your environment. For example, if the path to Larmord package is 
+/Software/LarmorD/, you should create the environmental variable: 
+
+		export LARMORD_BIN=/Software/Software/LarmorD/bin
+
+
 ## Using Pyshifts
-For more detailed instructions, watch video on youtube http://youtube.com/TOBEDONE
+For more detailed instructions, read manuscript https://github.com/atfrank/PyShifts/blob/master/user_guide/Pyshifts_manual.pdf
 
 1. Load the object to be analyzed in PyMOL.
 
