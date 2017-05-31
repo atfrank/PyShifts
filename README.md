@@ -12,7 +12,7 @@ Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics
         source active pyshifts
 After each use of Pyshifts, use 
          
-        source deactivate pyshifts
+    source deactivate pyshifts
 to go back to your normal Python settings.
 
 #### 2. PyMOL 
@@ -25,13 +25,15 @@ You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.
 #### 4. Get Lamord package
 - Larmord can be obtained from http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data, free of charge if not for commercial use. 
 - You also have to set LARMORD_BIN path in your environment. For example, if the path to Larmord package is 
-$/Software/LarmorD\_New-master/$, you should do
+	
+	/Software/LarmorD\_New-master/, 
+you should do
 
 		
-		vi ~/.bashrc
+	vi ~/.bashrc
 in command line and insert the following line: 
 
-		export LARMORD_BIN=/Software/LarmorD\_New-master/bin
+	export LARMORD_BIN=/Software/LarmorD\_New-master/bin
 
 
 
