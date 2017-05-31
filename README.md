@@ -25,14 +25,9 @@ You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.
 #### 4. Get Lamord package
 - Larmord can be obtained from http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data, free of charge if not for commercial use. 
 - You also have to set LARMORD_BIN path in your environment. For example, if the path to Larmord package is 
-$/Software/LarmorD\_New-master/$, you should do
+/Software/LarmorD/, you should create the environmental variable: 
 
-		
-		vi ~/.bashrc
-in command line and insert the following line: 
-
-		export LARMORD_BIN=/Software/LarmorD\_New-master/bin
-
+		export LARMORD_BIN=/Software/Software/LarmorD/bin
 
 
 ## Using Pyshifts
