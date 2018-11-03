@@ -43,7 +43,7 @@ import tkSimpleDialog
 import tkMessageBox
 import tkFileDialog
 import tkColorChooser
-from scipy import stats
+#from scipy import stats
 from math import log
 from Meter import Meter
 from math import sqrt
@@ -86,23 +86,24 @@ class PyShiftsPlugin:
     def __init__(self, app):
         """ Set up user interface and initialize parameters """
         # parameters used by LARMORD
-        self.pymol_sel     = Tkinter.StringVar()
-        self.larmord_bin    = Tkinter.StringVar()
-        self.larmord_para    = Tkinter.StringVar()
-        self.larmord_ref    = Tkinter.StringVar()
-        self.larmord_acc    = Tkinter.StringVar()
-        self.larmord_cs    = Tkinter.StringVar()
-        self.larmord_cs2    = Tkinter.StringVar()
+        self.parent = app.root
+        self.pymol_sel     = Tkinter.StringVar(self.parent)
+        self.larmord_bin    = Tkinter.StringVar(self.parent)
+        self.larmord_para    = Tkinter.StringVar(self.parent)
+        self.larmord_ref    = Tkinter.StringVar(self.parent)
+        self.larmord_acc    = Tkinter.StringVar(self.parent)
+        self.larmord_cs    = Tkinter.StringVar(self.parent)
+        self.larmord_cs2    = Tkinter.StringVar(self.parent)
         self.larmord_rlt_dict = {}
         self.larmord_error_all = {}
         self.larmord_error_carbon = {}
         self.larmord_error_proton = {}
         self.larmord_error_nitrogen = {}
-        self.larmord_error_color = Tkinter.StringVar()        
-        self.larmord_error_scale = Tkinter.DoubleVar()
-        self.larmord_error_height = Tkinter.DoubleVar()
-        self.larmord_error_lsize = Tkinter.IntVar()
-        self.larmord_ndisplayed = Tkinter.IntVar()
+        self.larmord_error_color = Tkinter.StringVar(self.parent)
+        self.larmord_error_scale = Tkinter.DoubleVar(self.parent)
+        self.larmord_error_height = Tkinter.DoubleVar(self.parent)
+        self.larmord_error_lsize = Tkinter.IntVar(self.parent)
+        self.larmord_ndisplayed = Tkinter.IntVar(self.parent)
         self.mae = {}
         self.measuredCS = {}
         self.predictedCS = []
@@ -113,10 +114,10 @@ class PyShiftsPlugin:
         self.larmord_erros = {}
         self.best_model_indices = []
         self.worst_model_indices = []
-        self.larmord_proton_offset = Tkinter.DoubleVar()
-        self.larmord_carbon_offset = Tkinter.DoubleVar()
-        self.larmord_nitrogen_offset = Tkinter.DoubleVar()
-        self.larmord_outlier_threshold = Tkinter.DoubleVar()
+        self.larmord_proton_offset = Tkinter.DoubleVar(self.parent)
+        self.larmord_carbon_offset = Tkinter.DoubleVar(self.parent)
+        self.larmord_nitrogen_offset = Tkinter.DoubleVar(self.parent)
+        self.larmord_outlier_threshold = Tkinter.DoubleVar(self.parent)
         self.get_shifts_from_larmord = True
         self.get_shifts_from_ramsey = True
         self.get_shifts_from_file = False
@@ -154,8 +155,7 @@ class PyShiftsPlugin:
         else:
             if VERBOSE: print 'LARMORD_BIN not found in environmental variables.'
             self.larmord_bin.set('')
-        
-        self.parent = app.root
+                
         
         # tooltips
         self.balloon = Pmw.Balloon(self.parent)
@@ -1195,7 +1195,8 @@ class PyShiftsPlugin:
                     list_expCS_nuclei.append(expCS)
                     list_predCS_nuclei.append(predCS)
             if nnuclei > 1:
-                pears, p_value = stats.pearsonr(list_predCS_nuclei, list_expCS_nuclei)
+                #pears, p_value = stats.pearsonr(list_predCS_nuclei, list_expCS_nuclei)
+                pears = 1
                 pearson += (pears * nnuclei) / nnucleus
         return pearson 
     
