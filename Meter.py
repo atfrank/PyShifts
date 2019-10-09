@@ -1,10 +1,10 @@
 '''Michael Lange <klappnase (at) freakmail (dot) de>
-The Meter class provides a simple progress bar widget for Tkinter.
+The Meter class provides a simple progress bar widget for tkinter.
 
 http://tkinter.unpythonic.net/wiki/ProgressMeter
 
 INITIALIZATION OPTIONS:
-The widget accepts all options of a Tkinter.Frame plus the following:
+The widget accepts all options of a tkinter.Frame plus the following:
 
     fillcolor -- the color that is used to indicate the progress of the
                  corresponding process; default is "orchid1".
@@ -18,22 +18,22 @@ The widget accepts all options of a Tkinter.Frame plus the following:
     textcolor -- the color to use for the widget's text; default is "black".
 
 WIDGET METHODS:
-All methods of a Tkinter.Frame can be used; additionally there are two widget specific methods:
+All methods of a tkinter.Frame can be used; additionally there are two widget specific methods:
 
     get() -- returns a tuple of the form (value, text)
     set(value, text) -- updates the widget's value and the displayed text;
                         if value is omitted it defaults to 0.0 , text defaults to None .
 '''
 
-import Tkinter
+import tkinter
 
-class Meter(Tkinter.Frame):
+class Meter(tkinter.Frame):
     def __init__(self, master, width=300, height=20, bg='white', fillcolor='gray70',\
                  value=0.0, text=None, font=None, textcolor='black', *args, **kw):
-        Tkinter.Frame.__init__(self, master, bg=bg, width=width, height=height, *args, **kw)
+        tkinter.Frame.__init__(self, master, bg=bg, width=width, height=height, *args, **kw)
         self._value = value
 
-        self._canv = Tkinter.Canvas(self, bg=self['bg'], width=self['width'], height=self['height'],\
+        self._canv = tkinter.Canvas(self, bg=self['bg'], width=self['width'], height=self['height'],\
                                     highlightthickness=0, relief='flat', bd=0)
         self._canv.pack(fill='both', expand=1)
         self._rect = self._canv.create_rectangle(0, 0, 0, self._canv.winfo_reqheight(), fill=fillcolor,\
