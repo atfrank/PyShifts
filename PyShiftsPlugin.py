@@ -119,14 +119,14 @@ class PyShiftsPlugin:
         self.nitrogen_error = {}
         self.carbon_error = {}
         self.larmord_erros = {}
-        self.best_model_indices = []
+        self.best_model_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         self.worst_model_indices = []
         self.larmord_proton_offset = tkinter.DoubleVar(self.parent)
         self.larmord_carbon_offset = tkinter.DoubleVar(self.parent)
         self.larmord_nitrogen_offset = tkinter.DoubleVar(self.parent)
         self.larmord_outlier_threshold = tkinter.DoubleVar(self.parent)
         self.get_shifts_from_larmord = True
-        self.get_shifts_from_ramsey = True
+        self.get_shifts_from_ramsey = False
         self.get_shifts_from_file = False
         self.weighted_errors = False
         self.larmord_error_sel = 'all'
@@ -153,7 +153,8 @@ class PyShiftsPlugin:
         if 'LARMORD_BIN' in os.environ:
             if VERBOSE: print('Found LARMORD_BIN in environmental variables', os.environ['LARMORD_BIN'])
             self.larmord_bin.set(os.environ['LARMORD_BIN'])
-            self.larmord_cs.set(os.environ['LARMORD_BIN']+"/../../test/measured_shifts_2KOC.dat")#for test use only
+            #self.larmord_cs.set(os.environ['LARMORD_BIN']+"/../../test/measured_shifts_2KOC.dat")#for test use only
+            self.larmord_cs.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/measured_shifts_fsw_freeES1.dat")#for test use only
             self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../test/predCS_test.dat")#for test use only
             self.pymol_sel.set("test")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
@@ -244,9 +245,9 @@ class PyShiftsPlugin:
 
         self.balloon.bind(self.mode_radio, 'Combined mode: chemical shifts will be computed using both LARMORD and RAMSEY and the result will be the average.\nRamsey mode: chemical shifts will be computed using RAMSEY.\nLarmord mode: chemical shifts will be computed using LARMORD.\nIn these three modes, computed chemical shifts will be compared to chemical shifts in the user supplied chemical shift file. \nOther mode: chemical shifts to be compared will be read from the user supplied chemical shift file.')
         # Add some buttons to the radiobuttons RadioSelect.
-        for text in ('Combined', 'Larmord', 'Ramsey', 'Other'):
+        for text in ('Larmord', 'Other'):
             self.mode_radio.add(text)
-        self.mode_radio.setvalue('Combined')
+        self.mode_radio.setvalue('Larmord')
 
         # Arrange widgets using grid
         pady = 10
@@ -1005,9 +1006,8 @@ class PyShiftsPlugin:
         self.reset_measuredCS()
         print('loading measured chemical shift from file...')
         if self.check_file(self.larmord_cs.get()):
-            expCS_type = {'names': ('resname', 'resid', 'nucleus','expCS'),'formats': ('S5', 'int', 'S5','float')}
             #expCS_data = np.loadtxt(self.larmord_cs.get(), dtype=expCS_type)
-            expCS_data = pd.read_csv(self.larmord_cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS'])
+            expCS_data = pd.read_csv(self.larmord_cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
             measured_resname = expCS_data['resname'].values
             measured_resid = expCS_data['resid'].values
             measured_nucleus = expCS_data['nucleus'].values
@@ -1579,7 +1579,7 @@ class PyShiftsPlugin:
         if metric in ['MAE']:
             self.sort_error()
         else:
-            self.sort_coef()
+            self.sort_coef()        
         self.printError(self.best_model_indices)
         self.showModels()
         return True
@@ -1602,7 +1602,6 @@ class PyShiftsPlugin:
         @param type: list
         """
         self.reset_errorTable()
-
         nucleus = self.larmord_error_sel
         if nucleus == 'proton':
             self.table_header = 'state_number proton_error Pearson_proton RMSE_proton'
@@ -1737,13 +1736,13 @@ class PyShiftsPlugin:
     def sort_error(self):
         nucleus = self.larmord_error_sel
         if nucleus == 'proton':
-            self.best_model_indices = np.argsort(self.proton_error.values()) + 1
+            self.best_model_indices = np.argsort(list(self.proton_error.values())) + 1
         if nucleus == 'carbon':
-            self.best_model_indices = np.argsort(self.carbon_error.values()) + 1
+            self.best_model_indices = np.argsort(list(self.carbon_error.values())) + 1
         if nucleus == 'nitrogen':
-            self.best_model_indices = np.argsort(self.nitrogen_error.values()) + 1
+            self.best_model_indices = np.argsort(list(self.nitrogen_error.values())) + 1
         if nucleus == 'all':
-            self.best_model_indices = np.argsort(self.total_error.values()) + 1
+            self.best_model_indices = np.argsort(list(self.total_error.values())) + 1
         return True
 
     def sort_coef(self):
