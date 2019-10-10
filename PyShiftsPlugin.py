@@ -40,7 +40,7 @@ import math
 import random
 import numpy as np
 import tempfile
-#from scipy import stats
+from scipy import stats
 from math import log
 from Meter import Meter
 from math import sqrt
@@ -1209,8 +1209,7 @@ class PyShiftsPlugin:
                     list_expCS_nuclei.append(expCS)
                     list_predCS_nuclei.append(predCS)
             if nnuclei > 1:
-                #pears, p_value = stats.pearsonr(list_predCS_nuclei, list_expCS_nuclei)
-                pears = 1
+                pears, p_value = stats.pearsonr(list_predCS_nuclei, list_expCS_nuclei)
                 pearson += (pears * nnuclei) / nnucleus
         return pearson
 
