@@ -76,6 +76,11 @@ except ImportError:
     print('Warning: failed to import Pmw. Exit ...')
     sys.exit(1)
 
+try:
+    import psico.fullinit
+except:
+    print("Couldn't find psico")
+
 VERBOSE = False
 
 #################
@@ -175,7 +180,7 @@ class PyShiftsPlugin:
         self.dialog.component('buttonbox').button(0).pack(fill='both',expand = 1, padx=10)
         Pmw.setbusycursorattributes(self.dialog.component('hull'))
 
-        w = tkinter.Label(self.dialog.interior(),text = 'PyShifts Plugin for PyMOL\nby  Jingru Xie and Aaron T. Frank, 2019\n',background = 'black', foreground = 'yellow')
+        w = tkinter.Label(self.dialog.interior(),text = 'PyShifts Plugin for PyMOL\nby  Jingru Xie, Kexin Zhang, and Aaron T. Frank, 2019\n',background = 'black', foreground = 'yellow')
         w.pack(expand = 1, fill = 'both', padx = 8, pady = 5)
 
         # add progress meter
@@ -593,8 +598,10 @@ class PyShiftsPlugin:
         group_about = tkinter.LabelFrame(page, text = 'PyShifts Plugin for PyMOL')
         group_about.grid(sticky='we', row=0,column=0,padx=5,pady=3)
         about_plugin = """ Tool For Comparing and Visualizing Chemical Shift Differences.
-                        by Jingru Xie <jingrux .at. umich.edu> and Aaron T. Frank  <afrankz .at. umich.edu>
-                        Please cite this plugin if you use it in a publication.
+                    Jingru Xie <jingrux .at. umich.edu>
+                    Kexin Zhang <kexin .at. umich.edu> 
+                    Aaron T. Frank  <afrankz .at. umich.edu>
+                    Please cite this plugin if you use it in a publication.
                         """
         label_about = tkinter.Label(group_about,text=about_plugin)
         label_about.grid(sticky='we', row=0, column=0,  pady=pady)
@@ -783,6 +790,11 @@ class PyShiftsPlugin:
     def reset_predictedCS(self):
         # reset predicted chemical shift
         self.predictedCS = []
+
+    def get_shifts_from_traj(self):
+        """
+        Run larmord in trajectory mode
+        """
 
     def reset_MAE(self):
         self.mae = {}
@@ -1471,6 +1483,36 @@ class PyShiftsPlugin:
         for objname in objlist:
             self.m.set(0)
             self.sel_obj_list.append('%s and %s' % (sel_name, objname))
+            #if number of states is greater than 1
+            try:
+                if cmd.count_states(objname) > 1:
+                    self.get_shifts_from_larmord = False
+                    self.get_shifts_from_ramsey = False
+                    self.get_shifts_from_file = True
+                    #pdb_fn = "/Users/afrankz/Desktop/tmp.pdb"
+                    #dcd_fn = "/Users/afrankz/Desktop/tmp.dcd"
+                    #larmord_tmpout_fn = "/Users/afrankz/Desktop/tmp.out"
+
+                    pdb_fn = None
+                    pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
+                    os.close(pdb_os_fh)
+
+                    dcd_fn = None
+                    pdb_os_fh, dcd_fn = tempfile.mkstemp(suffix='.dcd') # file os handle, file name
+                    os.close(pdb_os_fh)
+
+                    larmord_tmpout_fn = None
+                    pdb_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord') # file os handle, file name
+                    os.close(pdb_os_fh)
+        
+                    psico.exporting.save_traj(filename = dcd_fn, selection = objname)
+                    cmd.save(filename = pdb_fn, selection = objname, state = 1)
+                    larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                    os.system(larmord_cmd)
+                    self.larmord_cs2.set(larmord_tmpout_fn)
+            except:
+                continue
+            # loop over states
             for a in range(1,1+cmd.count_states("(all)")):
               cmd.frame(a)
               self.runAnalysisOneState(sel_name, objname)
