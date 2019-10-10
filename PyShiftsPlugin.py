@@ -119,7 +119,7 @@ class PyShiftsPlugin:
         self.nitrogen_error = {}
         self.carbon_error = {}
         self.larmord_erros = {}
-        self.best_model_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        self.best_model_indices = []
         self.worst_model_indices = []
         self.larmord_proton_offset = tkinter.DoubleVar(self.parent)
         self.larmord_carbon_offset = tkinter.DoubleVar(self.parent)
