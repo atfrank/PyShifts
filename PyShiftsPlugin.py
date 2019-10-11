@@ -1483,35 +1483,36 @@ class PyShiftsPlugin:
         for objname in objlist:
             self.m.set(0)
             self.sel_obj_list.append('%s and %s' % (sel_name, objname))
-            #if number of states is greater than 1
-            try:
-                if cmd.count_states(objname) > 1:
-                    self.get_shifts_from_larmord = False
-                    self.get_shifts_from_ramsey = False
-                    self.get_shifts_from_file = True
-                    #pdb_fn = "/Users/afrankz/Desktop/tmp.pdb"
-                    #dcd_fn = "/Users/afrankz/Desktop/tmp.dcd"
-                    #larmord_tmpout_fn = "/Users/afrankz/Desktop/tmp.out"
+            if not self.get_shifts_from_file:
+                #if number of states is greater than 1
+                try:
+                    if cmd.count_states(objname) > 1:
+                        self.get_shifts_from_larmord = False
+                        self.get_shifts_from_ramsey = False
+                        self.get_shifts_from_file = True
+                        #pdb_fn = "/Users/afrankz/Desktop/tmp.pdb"
+                        #dcd_fn = "/Users/afrankz/Desktop/tmp.dcd"
+                        #larmord_tmpout_fn = "/Users/afrankz/Desktop/tmp.out"
 
-                    pdb_fn = None
-                    pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
-                    os.close(pdb_os_fh)
+                        pdb_fn = None
+                        pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
+                        os.close(pdb_os_fh)
 
-                    dcd_fn = None
-                    pdb_os_fh, dcd_fn = tempfile.mkstemp(suffix='.dcd') # file os handle, file name
-                    os.close(pdb_os_fh)
+                        dcd_fn = None
+                        pdb_os_fh, dcd_fn = tempfile.mkstemp(suffix='.dcd') # file os handle, file name
+                        os.close(pdb_os_fh)
 
-                    larmord_tmpout_fn = None
-                    pdb_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord') # file os handle, file name
-                    os.close(pdb_os_fh)
+                        larmord_tmpout_fn = None
+                        pdb_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord') # file os handle, file name
+                        os.close(pdb_os_fh)
         
-                    psico.exporting.save_traj(filename = dcd_fn, selection = objname)
-                    cmd.save(filename = pdb_fn, selection = objname, state = 1)
-                    larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
-                    os.system(larmord_cmd)
-                    self.larmord_cs2.set(larmord_tmpout_fn)
-            except:
-                continue
+                        psico.exporting.save_traj(filename = dcd_fn, selection = objname)
+                        cmd.save(filename = pdb_fn, selection = objname, state = 1)
+                        larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                        os.system(larmord_cmd)
+                        self.larmord_cs2.set(larmord_tmpout_fn)
+                except:
+                    continue
             # loop over states
             for a in range(1,1+cmd.count_states("(all)")):
               cmd.frame(a)
