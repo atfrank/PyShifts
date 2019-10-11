@@ -160,7 +160,8 @@ class PyShiftsPlugin:
             self.larmord_bin.set(os.environ['LARMORD_BIN'])
             #self.larmord_cs.set(os.environ['LARMORD_BIN']+"/../../test/measured_shifts_2KOC.dat")#for test use only
             self.larmord_cs.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/measured_shifts_fsw_freeES1.dat")#for test use only
-            self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../test/predCS_test.dat")#for test use only
+            #self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../test/predCS_test.dat")#for test use only
+            self.larmord_cs2.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/shifts.txt")#for test use only
             self.pymol_sel.set("test")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
             self.larmord_ref.set(os.environ['LARMORD_BIN']+"/../data/larmorD_reference_shifts_rna.dat")
@@ -1081,6 +1082,27 @@ class PyShiftsPlugin:
             predCS[keypred] = larmord_predCS[res]
         return predCS
 
+    def parse_larmord_dataframe(self, data_ext, state):
+        """ Parse Larmord output to self.predictedCS
+            @param larmord_tmpout_fn: larmord output file
+            @param type: string
+            @output self.predictedCS: predicted chemical shift data provided by larmord output file
+            @output type: a list of dictionaries. List index: state number; dictionary key: redidues (id + name + nucleus), dictionary value: predicted chemical shifts data
+        """
+        predCS = {}
+        data_ext = data_ext[data_ext['state']==state]
+        larmord_resid = data_ext['resid'].values
+        larmord_resname = data_ext['resname'].values
+        larmord_nucleus = data_ext['nucleus'].values
+        larmord_predCS = data_ext['predCS'].values
+        # print larmord_predCS
+        for res in range(len(larmord_resid)):
+            #keypred = str(str(larmord_resid[res])+":"+larmord_resname[res]+":"+larmord_nucleus[res]).strip(sep=b'')
+            keypred = str(str(larmord_resid[res])+":"+larmord_resname[res]+":"+larmord_nucleus[res])
+            # generate keys to self.predictedCS
+            predCS[keypred] = larmord_predCS[res]
+        return predCS
+
     def prepare_file_for_analysis(self, predictor, sel_name, objname):
         one_obj_sel = '%s and %s' % (sel_name, objname)
         pdb_fn = None
@@ -1146,31 +1168,26 @@ class PyShiftsPlugin:
             if (self.get_shifts_from_larmord):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
                 larmord_cmd = '%s/larmord -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
+                os.system(larmord_cmd)
             if (self.get_shifts_from_ramsey):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Ramsey', sel_name, objname)
                 temp_file_os_fh, temp_file_fn = tempfile.mkstemp(suffix='.txt')
                 os.close(temp_file_os_fh)
                 larmord_cmd = "curl --fail --silent -X POST -F pdb=@%s http://50.63.157.7/RAMSEYWebService/upload/  | sed 's/<.*>//g' | awk -v model=%s -v id=%s '{print model, $0, id}' > %s" % (pdb_fn, cmd.get_state(), objname, temp_file_fn)
                 ramsey_format_cmd = "awk '{if($5>0) print $4, $2, $5, $1, $6}' %s > %s" %(temp_file_fn, larmord_tmpout_fn)
-            if (self.get_shifts_from_file):
-                larmord_tmpout_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord')
-                os.close(larmord_tmpout_os_fh)
+                os.system(larmord_cmd)
+                os.system(ramsey_format_cmd)
+            # Here call function self.parse_larmord_output and save predicted CS data to a global dictionary self.predCS
+            if not self.get_shifts_from_file:
+                predCS = self.parse_larmord_output(larmord_tmpout_fn)
+                self.predictedCS.append(predCS.copy())
+            else:
                 if self.check_file(self.larmord_cs2.get()):
-                    larmord_cmd = 'awk -v model=%s \'{ if($1==model && NF==6) print $2, $3, $4, $6, $5}\' %s > %s' % (cmd.get_state(), self.larmord_cs2.get(), larmord_tmpout_fn)
+                    predCS = self.parse_larmord_dataframe(data_ext = self.predCS_data_ext, state = cmd.get_state())
+                    self.predictedCS.append(predCS.copy())
                 else:
                     self.print_file_error(self.larmord_cs2.get())
                     return False
-            os.system(larmord_cmd)
-            if self.get_shifts_from_ramsey:
-                os.system(ramsey_format_cmd)
-                # temp_ramsey = open(larmord_tmpout_fn, 'r')
-                # print "****************************\nbegin ramsey data file\n****************************"
-                # templines = temp_ramsey.read()
-                # print templines
-                # temp_ramsey.close()
-            # Here call function self.parse_larmord_output and save predicted CS data to a global dictionary self.predCS
-            predCS = self.parse_larmord_output(larmord_tmpout_fn)
-            self.predictedCS.append(predCS.copy())
         return True
 
     ## Functions related to self.runCompare()
@@ -1511,8 +1528,15 @@ class PyShiftsPlugin:
                         larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
                         os.system(larmord_cmd)
                         self.larmord_cs2.set(larmord_tmpout_fn)
+                        self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                        print(predCS_data_ext.shape)
                 except:
                     continue
+            # load external file
+            if self.get_shifts_from_file:
+                self.predCS_data_ext = pd.read_csv(self.larmord_cs2.get(), sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                print(self.predCS_data_ext.shape)
+            
             # loop over states
             for a in range(1,1+cmd.count_states("(all)")):
               cmd.frame(a)
@@ -1596,14 +1620,6 @@ class PyShiftsPlugin:
                 progress = float(a)/float((cmd.count_states("(all)")))
                 self.m.set(progress)
 
-        # Load Files with bfactors
-        for s in range(1,cmd.count_states()+1):
-            obj_new = objname+"_"+str(s)
-            pdb_fn = obj_new+".pdb"
-            cmd.load(pdb_fn, obj_new)
-        cmd.group('models', objname+'_*')
-        cmd.hide("everything","models")
-
         # initial best indices
         self.runSort()
         self.analyzeButton.button(0).config(state = 'normal')
@@ -1621,7 +1637,7 @@ class PyShiftsPlugin:
         if metric in ['MAE']:
             self.sort_error()
         else:
-            self.sort_coef()        
+            self.sort_coef()
         self.printError(self.best_model_indices)
         self.showModels()
         return True
@@ -1734,22 +1750,22 @@ class PyShiftsPlugin:
         error_sel = self.larmord_error_sel
 
         # disable parent object
-        cmd.enable("all")
-        cmd.disable(sel_name)
-        cmd.disable("best*")
+        cmd.disable("all")
+        #cmd.disable(sel_name)
+        #cmd.disable("best*")
         # turn ON grid mode
         cmd.set("grid_mode", 0)
 
         s = self.error_table.curselection()
         selection = []
-
+        cmd.delete("focus")
         for index in s:
             a = int(index) - 2 #offset for the two header rows
             if a >= 0:
                 a = self.best_model_indices[a]
                 selection.append(a)
                 objname = sel_name +"_"+str(a)
-
+                cmd.load(objname+".pdb", objname)
                 # load error values for selected states
                 total_error = self.total_error[a]
                 proton_error = self.proton_error[a]
@@ -1758,13 +1774,9 @@ class PyShiftsPlugin:
                 self.render_one_object(objname, error_sel , error_scale, error_color)
                 self.currentstate = a
                 self.showCStable()
-
-        for index in range(1, cmd.count_states()+1):
-            sth = sel_name + '_' + str(index)
-            if index in selection:
-                continue
-            objname = sel_name + '_' + str(index)
-            cmd.disable(objname)
+                cmd.enable(objname)
+                cmd.orient(objname)
+        cmd.group("focus", sel_name+"_*")
 
     ### Methods and callback functions related to sorting error table
     def sort_state_number(self):
