@@ -21,10 +21,10 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 
 #### 4. Get Lamord package
 - Larmord can be obtained [here](http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data) and it is free of charge if not for commercial use. 
-- You also have to set `LARMORD_BIN` path in your environment. For example, if the path to Larmord package is 
-/Software/LarmorD/, you should create the environmental variable:
+- You also have to set `LARMORD_BIN` path in your environment. For example:
 
-        export LARMORD_BIN=/Software/Software/LarmorD/bin
+        export LARMORD_BIN=/Software/LarmorD/bin
+        export PATH="${LARMORD_BIN}:$PATH"
         
 #### 5. Get BME package
 - Install [this](https://github.com/KULL-Centre/BME) Bayesian Maximum Entropy (BME) library.
