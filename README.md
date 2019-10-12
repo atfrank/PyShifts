@@ -1,6 +1,6 @@
 
-# Pyshifts PyMOL plugin
-PyShifts--a PyMOL plugin to visualize chemical shift differences
+# Pyshifts
+PyShifts: a PyMOL plugin to visualize chemical shift differences
  
 ## Installation
 Pyshifts is a plugin in PyMOL. Tested on Pymol >= v2.0 and Python3. Should work with Pymol < v2.0.
@@ -28,7 +28,7 @@ You can obtain PYMOL [here](https://pymol.org/2/).
         
 #### 5. Get BME package
 - Install [this](https://github.com/KULL-Centre/BME) Bayesian Maximum Entropy (BME) library.
-- Remember to it the library to your PYTHONPATH. For example:
+- Remember to add the library to your PYTHONPATH. For example:
 
         export BME=/home/XXX/GitHub/BME/
         export PYTHONPATH="${BME}:$PYTHONPATH"
@@ -36,7 +36,7 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 
 #### 6. Get Psico library
 - [optional] Install the [Pymol ScrIpt COllection (PSICO)](https://github.com/speleo3/pymol-psico). Improves performance of PyShifts when computing chemical shifts using LARMORD.
-- Remember to it the library to your PYTHONPATH. For example:
+- Remember to add the library to your PYTHONPATH. For example:
 
         export PSICO=/home/XXX/GitHub/pymol-psico/
         export PYTHONPATH="${PSICO}:$PYTHONPATH"
