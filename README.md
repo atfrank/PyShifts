@@ -17,7 +17,7 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 
 #### 3. Adding Pyshifts to PyMOL
 - Download or clone this git repository.
-- Open PyMOL and then go to Plugin -> Plugin manager -> Install new plugin, and choose the Pyshifts.py file in your local Pyshifts repository. For this step PyMOL need to be run with the Tcl/Tk interface, read more on PyMOL wiki https://pymolwiki.org/index.php/Plugins.
+- Open PyMOL and then go to Plugin -> Plugin manager -> Install new plugin, and choose the Pyshifts.py file in your local Pyshifts repository. For this step PyMOL need to be run with the Tcl/Tk interface, read more on [PyMOL wiki](https://pymolwiki.org/index.php/Plugins).
 
 #### 4. Get Lamord package
 - Larmord can be obtained [here](https://umich.flintbox.com/?embed=true#technologies/bae4aa7e-2fbd-47dd-8886-533c147d75df) and it is free of charge if not for commercial use. 
