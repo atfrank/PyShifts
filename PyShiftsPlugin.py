@@ -147,12 +147,17 @@ class PyShiftsPlugin:
         self.larmord_error_sel = 'all'
         self.BME = BME
         self.PSICO = PSICO
+        
+        # Initialize some variables
         # Define different types of nucleus of interest
         self.proton_list = ["H1","H3","H1'", "H2'", "H3'", "H4'", "H5'",  "H5''", "H2", "H5", "H6", "H8"]
         self.carbon_list = ["C1'", "C2'", "C3'", "C4'", "C5'", "C2", "C5", "C6", "C8"]
         self.nitrogen_list = ["N1", "N3"]
         self.total_list = self.proton_list + self.carbon_list + self.nitrogen_list
-
+        self.ndisplayed = 10
+        if self.ndisplayed > cmd.count_states(self.pymol_sel.get()): 
+            self.ndisplayed = cmd.count_states(self.pymol_sel.get())
+        
         self.sel_obj_list = []
         # there may be more than one seletion or object defined by self.pymol_sel
         # treat each selection and object separately
@@ -193,7 +198,7 @@ class PyShiftsPlugin:
         self.dialog.component('buttonbox').button(0).pack(fill='both',expand = 1, padx=10)
         Pmw.setbusycursorattributes(self.dialog.component('hull'))
 
-        w = tkinter.Label(self.dialog.interior(),text = 'PyShifts Plugin for PyMOL\nby  Jingru Xie, Kexin Zhang, and Aaron T. Frank, 2019\n',background = 'black', foreground = 'yellow')
+        w = tkinter.Label(self.dialog.interior(),text = 'PyShifts Plugin for PyMOL\nby  Jingru Xie, Kexin Zhang, and Aaron T. Frank, 2016\n',background = 'black', foreground = 'yellow')
         w.pack(expand = 1, fill = 'both', padx = 8, pady = 5)
 
         # add progress meter
@@ -579,7 +584,7 @@ class PyShiftsPlugin:
         self.error_ndisplay_ent = Pmw.EntryField(group_error,
                         labelpos = 'w',
                         label_text='No. models to display:',
-                        value = '10',
+                        value = '%s'%(self.ndisplayed),
                         entry_width = 3,
                         entry_textvariable=self.larmord_ndisplayed
                         )
@@ -1085,7 +1090,7 @@ class PyShiftsPlugin:
         predCS_type = {'names': ('resid', 'resname', 'nucleus', 'junk', 'predCS'),'formats': ('int', 'S5', 'S5', 'S5','float')}
         #predCS_data = np.loadtxt(larmord_tmpout_fn, dtype=predCS_type)
         predCS_data = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['resid', 'resname', 'nucleus', 'junk', 'predCS'])
-        print(predCS_data)
+        #print(predCS_data)
         larmord_resid = predCS_data['resid'].values
         larmord_resname = predCS_data['resname'].values
         larmord_nucleus = predCS_data['nucleus'].values
@@ -1542,6 +1547,9 @@ class PyShiftsPlugin:
 
         # Disable all the buttons while running analysis
         self.disableAll()
+        
+        # reset
+        self.get_shifts_from_file_larmord = False
 
         # reset predicted and measured chemical shifts(if ever loaded) before running analysis
         self.reset_predictedCS()
@@ -1555,7 +1563,7 @@ class PyShiftsPlugin:
         if not self.check_file(self.larmord_cs.get()):
             self.print_file_error(self.larmord_cs.get())
             return False
-
+        
         # each object in the selection is treated as an independent struc
         cmd.enable(sel_name) # enable selection
         objlist = cmd.get_object_list(sel_name)
@@ -1565,10 +1573,8 @@ class PyShiftsPlugin:
             if not self.get_shifts_from_file:
                 #if number of states is greater than 1
                 if self.PSICO and cmd.count_states(objname) > 1:
-                    self.get_shifts_from_larmord = False
-                    self.get_shifts_from_ramsey = False
-                    self.get_shifts_from_file = True
-
+                    self.get_shifts_from_file_larmord = True
+                    
                     pdb_fn = None
                     pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
                     os.close(pdb_os_fh)
@@ -1584,14 +1590,24 @@ class PyShiftsPlugin:
                     psico.exporting.save_traj(filename = dcd_fn, selection = objname)
                     cmd.save(filename = pdb_fn, selection = objname, state = 1)
                     larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                    #print(larmord_cmd)
                     os.system(larmord_cmd)
-                    self.larmord_cs2.set(larmord_tmpout_fn)
+                    self.larmord_cs2_internal = larmord_tmpout_fn
                     self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
-                    print(self.predCS_data_ext.shape)
+                    #print(self.predCS_data_ext.shape)
             # load external file
             if self.get_shifts_from_file:
                 self.predCS_data_ext = pd.read_csv(self.larmord_cs2.get(), sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
-                print(self.predCS_data_ext.shape)
+                print("from external file")
+            if self.get_shifts_from_file_larmord:
+                self.predCS_data_ext = pd.read_csv(self.larmord_cs2_internal, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                print("from internal file")
+            if self.get_shifts_from_file and self.get_shifts_from_larmord: self.get_shifts_from_larmord = False
+
+            # check for mismatch between  number of states in external file and number states in pymol object
+            if self.check_states_mismatch():
+                self.print_mismatch_error()
+                return False
             
             # loop over states
             for a in range(1,1+cmd.count_states("(all)")):
@@ -2172,6 +2188,14 @@ class PyShiftsPlugin:
         except:
             return False
 
+    def print_mismatch_error(self):
+        err_msg = 'Mismatch # states in %s !=  # states in %s.' %(self.larmord_cs2.get(), self.pymol_sel.get())
+        print('ERROR: %s' % (err_msg,))
+        tkMessageBox.showinfo(title='ERROR', message=err_msg)
+        
+    def check_states_mismatch(self):
+        return(len(self.predCS_data_ext.state.unique()) != cmd.count_states(self.pymol_sel.get()))
+        
     def print_file_error(self, file):
         err_msg = 'The %s does not exist or is empty.' %(file,)
         print('ERROR: %s' % (err_msg,))

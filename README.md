@@ -5,18 +5,15 @@ PyShifts is a graphical analysis tool that utilize chemical shifts to assess the
 ## Installation
 Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics tool. Python of version 2.7.10 and PyMOL are REQUIRED for Pyshifts.
 #### 1. Python
-- Python version of 2.7.10 (and 2.7.10 only), which is freely available at https://www.python.org/downloads/release/python-2710/.
-- If your current Python version is not 2.7.10, and you prefer not to change it, you can use the following commands to create a Python 2.7.10 environment temporarily for Pyshifts:
-
         conda create -n pyshifts python=2.7.10
-        source active pyshifts
-After each use of Pyshifts, use 
-         
+        source activate pyshifts
+        conda install pandas
+        conda install scipy
         source deactivate pyshifts
 to go back to your normal Python settings.
 
 #### 2. PyMOL 
-You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.  
+You can obtain PYMOL [here](https://pymol.org/2/).
 
 #### 3. Adding Pyshifts to PyMOL
 - Download or clone this git repository.
@@ -26,8 +23,18 @@ You can obtain PYMOL at sourceforge https://sourceforge.net/projects/pymol/.
 - Larmord can be obtained from http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data, free of charge if not for commercial use. 
 - You also have to set LARMORD_BIN path in your environment. For example, if the path to Larmord package is 
 /Software/LarmorD/, you should create the environmental variable: 
+        export LARMORD_BIN=/Software/Software/LarmorD/bin
+#### 5. Get BME package
+- Install (this)[https://github.com/KULL-Centre/BME] Bayesian Maximum Entropy (BME) library.
+- Remember to it the library to your PYTHONPATH. For example:
+        export BME=/home/XXX/GitHub/BME/
+        export PYTHONPATH="${BME}:$PYTHONPATH"
 
-		export LARMORD_BIN=/Software/Software/LarmorD/bin
+#### 6. Get Psico library
+- [optional] Install the (Pymol ScrIpt COllection (PSICO))[https://github.com/speleo3/pymol-psico]. Improves performance of PyShifts when computing chemical shifts using LARMORD.
+- Remember to it the library to your PYTHONPATH. For example:
+        export PSICO=/home/XXX/GitHub/pymol-psico/
+        export PYTHONPATH="${PSICO}:$PYTHONPATH"
 
 
 ## Using Pyshifts
@@ -47,10 +54,8 @@ For more detailed instructions, read manuscript https://github.com/atfrank/PyShi
 The PyMOL Plugin source code in this file is copyrighted, but you can
 freely use and copy it as long as you don't change or remove any of
 the copyright notices.
-
                       This PyMOL Plugin is Copyright (C) 2016 by 
-           Jingru Xie <jingrux at umich dot edu> and Aaron T. Frank <afrankz at umich dot edu>
-
+           Jingru Xie <jingrux at umich dot edu>, Kexin Zhang <kexin at umich dot edu> and Aaron T. Frank <afrankz at umich dot edu>
                               All Rights Reserved
 
 Permission to use, copy, modify, distribute, and distribute modified
