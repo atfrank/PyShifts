@@ -69,17 +69,27 @@ except ImportError:
     print('Warning: pymol library cmd not found.')
     sys.exit(1)
 
-# external lib
+# external libraries
 try:
     import Pmw
 except ImportError:
     print('Warning: failed to import Pmw. Exit ...')
     sys.exit(1)
 
+# try loading optionally libraries
 try:
     import psico.fullinit
+    PSICO = True
 except:
+    PSICO = False
     print("Couldn't find psico")
+
+try:
+    import bme_reweight as bme
+    BME = True
+except:
+    BME = False
+    print("Couldn't find BME")
 
 VERBOSE = False
 
@@ -135,6 +145,8 @@ class PyShiftsPlugin:
         self.get_shifts_from_file = False
         self.weighted_errors = False
         self.larmord_error_sel = 'all'
+        self.BME = BME
+        self.PSICO = PSICO
         # Define different types of nucleus of interest
         self.proton_list = ["H1","H3","H1'", "H2'", "H3'", "H4'", "H5'",  "H5''", "H2", "H5", "H6", "H8"]
         self.carbon_list = ["C1'", "C2'", "C3'", "C4'", "C5'", "C2", "C5", "C6", "C8"]
@@ -298,16 +310,16 @@ class PyShiftsPlugin:
         self.error_table = Listbox(group_table,
             font = fixedFont,
             selectmode = BROWSE,
-            width = 35,
+            width = 45,
             height = 13,
-            bd = 5,
+            bd = 4,
             relief='ridge',
         )
         self.error_table.pack(fill = BOTH, expand = 1)
         self.error_table.bind("<Double-Button-1>", self.sele_from_table)
         # Create the table header
-        self.error_table.insert(1, 'Error Table'.center(30))
-        self.table_header = 'state MAE Pearson RMSE'
+        self.error_table.insert(1, 'Error Table'.center(40))
+        self.table_header = 'state MAE Pearson RMSE BME'
         self.table_header = string.split(self.table_header)
 
         # Create row headers
@@ -412,7 +424,7 @@ class PyShiftsPlugin:
                         hull_relief = 'ridge',
                 )
         self.balloon.bind(self.sortby_metric, 'Error metric to use when sorting states (state = reset)')
-        for text in ['MAE', 'pearson', 'RMSE', 'state']:
+        for text in ['MAE', 'pearson', 'RMSE', 'state', 'weight']:
             self.sortby_metric.add(text)
         self.sortby_metric.setvalue('MAE')
         self.larmord_error_metric = 'MAE'
@@ -690,6 +702,9 @@ class PyShiftsPlugin:
         if tag in ['state']:
             self.larmord_error_metric = 'state'
             self.disableNuclei()
+        if tag in ['weight']:
+            self.larmord_error_metric = 'weight'
+            self.disableNuclei()
 
     def sortByNucleusCallBack(self, tag):
         self.larmord_error_sel = 'all'
@@ -809,6 +824,7 @@ class PyShiftsPlugin:
                 mae_type = {'names': ('resname', 'nucleus','MAE'),'formats': ('S5','S5','float')}
                 #data = np.loadtxt(self.larmord_acc.get(), dtype=mae_type)
                 data = pd.read_csv(self.larmord_acc.get(), sep = " ", names = ['resname', 'nucleus','MAE'])
+                self.larmord_acc_ext = data
                 larmord_resname = data['resname'].values
                 larmord_nucleus = data['nucleus'].values
                 larmord_mae = data['MAE'].values
@@ -1021,6 +1037,7 @@ class PyShiftsPlugin:
         if self.check_file(self.larmord_cs.get()):
             #expCS_data = np.loadtxt(self.larmord_cs.get(), dtype=expCS_type)
             expCS_data = pd.read_csv(self.larmord_cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
+            self.expCS_data_ext = expCS_data
             measured_resname = expCS_data['resname'].values
             measured_resid = expCS_data['resid'].values
             measured_nucleus = expCS_data['nucleus'].values
@@ -1102,7 +1119,34 @@ class PyShiftsPlugin:
             # generate keys to self.predictedCS
             predCS[keypred] = larmord_predCS[res]
         return predCS
+        
+    def prepare_bme_files(self):
+        states = [i for i in range(1,1+cmd.count_states(self.pymol_sel.get()))]
+        predCS_data_ext = self.predCS_data_ext[self.predCS_data_ext['state'].isin(states)]
+        # merge data
+        self.mergedCS = predCS_data_ext.merge(self.expCS_data_ext, on = ['resname', 'resid', 'nucleus'])
+        self.mergedCS = self.mergedCS.merge(self.larmord_acc_ext, on = ['resname', 'nucleus'])
+        self.mergedCS = self.mergedCS.sort_values(['nucleus', 'resid', 'state'], ascending=[None,True,True])
+        print(self.mergedCS.head())
+        
+        # shape into matrices
+        nrow = len(self.mergedCS.state.unique())
+        self.cs_matrix = pd.DataFrame(self.mergedCS.predCS.values.reshape(-1, nrow).transpose())
+        self.sim_matrix = pd.DataFrame(self.mergedCS.expCS.values.reshape(-1, nrow).transpose()).transpose()
+        self.error_matrix = pd.DataFrame(self.mergedCS.MAE.values.reshape(-1, nrow).transpose()).transpose()
+        
+        self.sim_fn = None
+        sim_os_fh, self.sim_fn = tempfile.mkstemp(suffix='.txt') # file os handle, file name
+        os.close(sim_os_fh)
 
+        self.exp_fn = None
+        exp_os_fh, self.exp_fn = tempfile.mkstemp(suffix='.txt') # file os handle, file name
+        os.close(exp_os_fh)
+
+        # rewrite out files
+        self.cs_matrix.to_csv(self.sim_fn, sep = ' ', header = None)
+        pd.DataFrame([self.sim_matrix[0], self.error_matrix[0]]).transpose().to_csv(self.exp_fn, sep = ' ', index_label = '#', header = ['DATA=JCOUPLINGS', 'PRIOR=GAUSS'])
+    
     def prepare_file_for_analysis(self, predictor, sel_name, objname):
         one_obj_sel = '%s and %s' % (sel_name, objname)
         pdb_fn = None
@@ -1191,6 +1235,24 @@ class PyShiftsPlugin:
         return True
 
     ## Functions related to self.runCompare()
+    def runBME(self):
+        bmea = bme.Reweight(verbose=TRUE)
+    
+        # load data
+        bmea.load(self.exp_fn, self.sim_fn)
+    
+        # do optimization using theta=2
+        bme_converged = False
+        theta=0.1
+        while(not bme_converged):
+            try:
+                chi2_before,chi2_after, srel = bmea.optimize(theta=theta)
+                bme_converged = True
+            except:
+                theta+=1.0
+        self.w_opt = list(np.round_(bmea.get_weights(), 4))
+        self.w_opt.insert(0,0)
+    
     def root_mean_square_error(self,x,y,mae):
         # Calculate the root mean square error of two vectors x,y
         # Avoid dependence on python packages
@@ -1502,36 +1564,30 @@ class PyShiftsPlugin:
             self.sel_obj_list.append('%s and %s' % (sel_name, objname))
             if not self.get_shifts_from_file:
                 #if number of states is greater than 1
-                try:
-                    if cmd.count_states(objname) > 1:
-                        self.get_shifts_from_larmord = False
-                        self.get_shifts_from_ramsey = False
-                        self.get_shifts_from_file = True
-                        #pdb_fn = "/Users/afrankz/Desktop/tmp.pdb"
-                        #dcd_fn = "/Users/afrankz/Desktop/tmp.dcd"
-                        #larmord_tmpout_fn = "/Users/afrankz/Desktop/tmp.out"
+                if self.PSICO and cmd.count_states(objname) > 1:
+                    self.get_shifts_from_larmord = False
+                    self.get_shifts_from_ramsey = False
+                    self.get_shifts_from_file = True
 
-                        pdb_fn = None
-                        pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
-                        os.close(pdb_os_fh)
+                    pdb_fn = None
+                    pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
+                    os.close(pdb_os_fh)
 
-                        dcd_fn = None
-                        pdb_os_fh, dcd_fn = tempfile.mkstemp(suffix='.dcd') # file os handle, file name
-                        os.close(pdb_os_fh)
+                    dcd_fn = None
+                    pdb_os_fh, dcd_fn = tempfile.mkstemp(suffix='.dcd') # file os handle, file name
+                    os.close(pdb_os_fh)
 
-                        larmord_tmpout_fn = None
-                        pdb_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord') # file os handle, file name
-                        os.close(pdb_os_fh)
-        
-                        psico.exporting.save_traj(filename = dcd_fn, selection = objname)
-                        cmd.save(filename = pdb_fn, selection = objname, state = 1)
-                        larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
-                        os.system(larmord_cmd)
-                        self.larmord_cs2.set(larmord_tmpout_fn)
-                        self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
-                        print(predCS_data_ext.shape)
-                except:
-                    continue
+                    larmord_tmpout_fn = None
+                    pdb_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord') # file os handle, file name
+                    os.close(pdb_os_fh)
+    
+                    psico.exporting.save_traj(filename = dcd_fn, selection = objname)
+                    cmd.save(filename = pdb_fn, selection = objname, state = 1)
+                    larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                    os.system(larmord_cmd)
+                    self.larmord_cs2.set(larmord_tmpout_fn)
+                    self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                    print(self.predCS_data_ext.shape)
             # load external file
             if self.get_shifts_from_file:
                 self.predCS_data_ext = pd.read_csv(self.larmord_cs2.get(), sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
@@ -1566,11 +1622,6 @@ class PyShiftsPlugin:
         cmd.enable(sel)
 
         self.disableAll()
-        # load MAEs
-        if self.weighted_errors:
-        	self.load_MAE()
-        else:
-        	self.reset_MAE()
 
         lowerLimit = 10 * cmd.count_states("(all)")
         # Initialize error coefficients
@@ -1596,6 +1647,14 @@ class PyShiftsPlugin:
 
         self.load_measuredCS()
         self.conv_resname_format()
+        
+        # load MAEs and maybe prep for BME
+        if self.weighted_errors:
+            self.load_MAE()
+            if self.BME:
+                self.prepare_bme_files()
+        else:
+            self.reset_MAE()
 
         # checking selection
         sel_name = self.check_selection(sel)
@@ -1608,6 +1667,7 @@ class PyShiftsPlugin:
             # reset progress bar
             self.m.set(0)
             temp = '%s and %s' % (sel_name, objname)
+            w_opt = []
             self.sel_obj_list.append(temp)
             for a in range(1,1+cmd.count_states("(all)")):
                 cmd.frame(a)
@@ -1618,6 +1678,7 @@ class PyShiftsPlugin:
                 pdb_fn = obj_new+".pdb"
                 cmd.save(filename=pdb_fn, selection=temp)
                 progress = float(a)/float((cmd.count_states("(all)")))
+                w_opt.append(1.0)
                 self.m.set(progress)
 
         # initial best indices
@@ -1633,6 +1694,13 @@ class PyShiftsPlugin:
         'Sort' -> self.runSort -> self.showModels -> self.runRender
         """
         self.resetCSTable()
+        if self.BME:
+            self.runBME()
+            print(self.w_opt)
+            print("%s %s"%(len(self.w_opt), np.sum(self.w_opt)))
+        else:
+            self.w_opt = w_opt
+        
         metric = self.larmord_error_metric
         if metric in ['MAE']:
             self.sort_error()
@@ -1662,13 +1730,13 @@ class PyShiftsPlugin:
         self.reset_errorTable()
         nucleus = self.larmord_error_sel
         if nucleus == 'proton':
-            self.table_header = 'state_number proton_error Pearson_proton RMSE_proton'
+            self.table_header = 'state_number proton_error Pearson_proton RMSE_proton w_opt'
         if nucleus == 'carbon':
-            self.table_header = 'state_number carbon_error Pearson_carbon RMSE_carbon'
+            self.table_header = 'state_number carbon_error Pearson_carbon RMSE_carbon w_opt'
         if nucleus == 'nitrogen':
-            self.table_header = 'state_number nitrogen_error Pearson_nitrogen RMSE_nitrogen'
+            self.table_header = 'state_number nitrogen_error Pearson_nitrogen RMSE_nitrogen w_opt'
         if nucleus == 'all':
-            self.table_header = 'state_number total_error Pearson_coef RMSE_coef'
+            self.table_header = 'state_number total_error Pearson_coef RMSE_coef w_opt'
         self.table_header = string.split(self.table_header)
 
         #Initialize state_number array
@@ -1709,7 +1777,7 @@ class PyShiftsPlugin:
             errorTable.write(dataline)
 
         # When metric in {everthing else}
-        for self.larmord_error_metric in ['MAE', 'pearson', 'RMSE',]:
+        for self.larmord_error_metric in ['MAE', 'pearson', 'RMSE', 'weight',]:
             metric = self.larmord_error_metric
             for self.larmord_error_sel in ['proton', 'carbon', 'nitrogen', 'all']:
                 nucleus = self.larmord_error_sel
@@ -1811,6 +1879,12 @@ class PyShiftsPlugin:
             self.sort_RMSE_coef()
         if metric in ['state']:
             self.sort_state_number()
+        if metric in ['weight']:
+            self.sort_weight()
+
+    def sort_weight(self):
+        self.best_model_indices = np.argsort(self.w_opt)[::-1]
+        return True
 
     def sort_Pearson_coef(self):
         nucleus = self.larmord_error_sel
