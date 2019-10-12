@@ -25,19 +25,19 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 /Software/LarmorD/, you should create the environmental variable: 
         export LARMORD_BIN=/Software/Software/LarmorD/bin
 #### 5. Get BME package
-- Install (this)[https://github.com/KULL-Centre/BME] Bayesian Maximum Entropy (BME) library.
+- Install [this](https://github.com/KULL-Centre/BME) Bayesian Maximum Entropy (BME) library.
 - Remember to it the library to your PYTHONPATH. For example:
         export BME=/home/XXX/GitHub/BME/
         export PYTHONPATH="${BME}:$PYTHONPATH"
 
 #### 6. Get Psico library
-- [optional] Install the (Pymol ScrIpt COllection (PSICO))[https://github.com/speleo3/pymol-psico]. Improves performance of PyShifts when computing chemical shifts using LARMORD.
+- [optional] Install the [Pymol ScrIpt COllection (PSICO)](https://github.com/speleo3/pymol-psico). Improves performance of PyShifts when computing chemical shifts using LARMORD.
 - Remember to it the library to your PYTHONPATH. For example:
         export PSICO=/home/XXX/GitHub/pymol-psico/
         export PYTHONPATH="${PSICO}:$PYTHONPATH"
 
 ## Using Pyshifts
-For more detailed instructions, read manuscript https://github.com/atfrank/PyShifts/blob/master/user_guide/Pyshifts_manual.pdf
+For more detailed instructions, read the [user guide](https://github.com/atfrank/PyShifts/blob/master/user_guide/Pyshifts_manual.pdf). 
 
 1. Load the object to be analyzed in PyMOL.
 
