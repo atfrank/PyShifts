@@ -1,17 +1,17 @@
 
 # Pyshifts PyMOL plugin
-PyShifts is a graphical analysis tool that utilize chemical shifts to assess the global quality of NMR structures of RNA. For more information on theoretical basis as well as our promising test results, see http://linktoManuscript . 
+PyShifts--a PyMOL plugin to visualize chemical shiftdifferences
  
 ## Installation
-Pyshifts is a plugin in PyMOL, an open source Python-enhanced molecular graphics tool. Python of version 2.7.10 and PyMOL are REQUIRED for Pyshifts.
-#### 1. Python
-        conda create -n pyshifts python=2.7.10
+Pyshifts is a plugin in PyMOL. Tested on Pymol >= v2.0 and Python3. Should work with Pymol < v2.0.
+
+#### 1. Set up pyshifts environment
+        conda create -n pyshifts
         source activate pyshifts
         conda install pandas
         conda install scipy
         source deactivate pyshifts
-to go back to your normal Python settings.
-
+        
 #### 2. PyMOL 
 You can obtain PYMOL [here](https://pymol.org/2/).
 
@@ -35,7 +35,6 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 - Remember to it the library to your PYTHONPATH. For example:
         export PSICO=/home/XXX/GitHub/pymol-psico/
         export PYTHONPATH="${PSICO}:$PYTHONPATH"
-
 
 ## Using Pyshifts
 For more detailed instructions, read manuscript https://github.com/atfrank/PyShifts/blob/master/user_guide/Pyshifts_manual.pdf
