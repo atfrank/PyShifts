@@ -1,6 +1,6 @@
 
 # Pyshifts PyMOL plugin
-PyShifts--a PyMOL plugin to visualize chemical shiftdifferences
+PyShifts--a PyMOL plugin to visualize chemical shift differences
  
 ## Installation
 Pyshifts is a plugin in PyMOL. Tested on Pymol >= v2.0 and Python3. Should work with Pymol < v2.0.
@@ -20,8 +20,8 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 - Open PyMOL and then go to Plugin -> Plugin manager -> Install new plugin, and choose the Pyshifts.py file in your local Pyshifts repository. For this step PyMOL need to be run with the Tcl/Tk interface, read more on PyMOL wiki https://pymolwiki.org/index.php/Plugins.
 
 #### 4. Get Lamord package
-- Larmord can be obtained from http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data, free of charge if not for commercial use. 
-- You also have to set LARMORD_BIN path in your environment. For example, if the path to Larmord package is 
+- Larmord can be obtained (here)[http://inventions.umich.edu/technologies/6481_software-for-rna-structure-and-dynamics-elucidation-from-nmr-data] and it is free of charge if not for commercial use. 
+- You also have to set `LARMORD_BIN` path in your environment. For example, if the path to Larmord package is 
 /Software/LarmorD/, you should create the environmental variable: 
         export LARMORD_BIN=/Software/Software/LarmorD/bin
 #### 5. Get BME package
