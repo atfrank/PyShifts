@@ -1248,7 +1248,7 @@ class PyShiftsPlugin:
     
         # do optimization using theta=2
         bme_converged = False
-        theta=0.1
+        theta=1.0
         while(not bme_converged):
             try:
                 chi2_before,chi2_after, srel = bmea.optimize(theta=theta)
@@ -1257,6 +1257,7 @@ class PyShiftsPlugin:
                 theta+=1.0
         self.w_opt = list(np.round_(bmea.get_weights(), 4))
         self.w_opt.insert(0,0)
+        return(theta)
     
     def root_mean_square_error(self,x,y,mae):
         # Calculate the root mean square error of two vectors x,y
@@ -1472,6 +1473,10 @@ class PyShiftsPlugin:
         self.render_larmord_errors(obj_name, error_sel, error_scale)
         # display cartoon and spheres and then color based on b-factors
         cmd.set( "cartoon_ring_mode", 3)
+        cmd.set("cartoon_tube_radius", 1)
+        cmd.set("cartoon_ring_width", 0.3)
+        cmd.show("sticks", "not backbone")
+        cmd.set("stick_radius", 0.5)
         cmd.show("cartoon", obj_name)
         cmd.show("spheres", obj_name)
         cmd.spectrum("b", error_color, obj_name)
@@ -1711,9 +1716,9 @@ class PyShiftsPlugin:
         """
         self.resetCSTable()
         if self.BME:
-            self.runBME()
+            theta = self.runBME()
             print(self.w_opt)
-            print("%s %s"%(len(self.w_opt), np.sum(self.w_opt)))
+            print("BME %s %s %s"%(len(self.w_opt), np.sum(self.w_opt), theta))
         else:
             self.w_opt = w_opt
         
