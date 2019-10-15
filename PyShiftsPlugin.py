@@ -76,6 +76,15 @@ except ImportError:
     print('Warning: failed to import Pmw. Exit ...')
     sys.exit(1)
 
+try:
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.neighbors import NearestNeighbors
+    from sklearn.cluster import KMeans
+    SKLEARN = True
+except:
+    SKLEARN = False
+    print("Couldn't find sklearn")
+
 # try loading optionally libraries
 try:
     import psico.fullinit
@@ -126,6 +135,8 @@ class PyShiftsPlugin:
         self.larmord_error_height = tkinter.DoubleVar(self.parent)
         self.larmord_error_lsize = tkinter.IntVar(self.parent)
         self.larmord_ndisplayed = tkinter.IntVar(self.parent)
+        self.min_size = tkinter.IntVar(self.parent)
+        self.larmord_ndisplayed = tkinter.IntVar(self.parent)
         self.mae = {}
         self.measuredCS = {}
         self.predictedCS = []
@@ -147,6 +158,7 @@ class PyShiftsPlugin:
         self.larmord_error_sel = 'all'
         self.BME = BME
         self.PSICO = PSICO
+        self.SKLEARN = SKLEARN
         
         # Initialize some variables
         # Define different types of nucleus of interest
@@ -315,7 +327,7 @@ class PyShiftsPlugin:
         self.error_table = Listbox(group_table,
             font = fixedFont,
             selectmode = BROWSE,
-            width = 45,
+            width = 55,
             height = 13,
             bd = 4,
             relief='ridge',
@@ -323,8 +335,8 @@ class PyShiftsPlugin:
         self.error_table.pack(fill = BOTH, expand = 1)
         self.error_table.bind("<Double-Button-1>", self.sele_from_table)
         # Create the table header
-        self.error_table.insert(1, 'Error Table'.center(40))
-        self.table_header = 'state MAE Pearson RMSE BME'
+        self.error_table.insert(1, 'Error Table'.center(50))
+        self.table_header = 'state MAE Pearson RMSE BME clusters'
         self.table_header = string.split(self.table_header)
 
         # Create row headers
@@ -429,7 +441,7 @@ class PyShiftsPlugin:
                         hull_relief = 'ridge',
                 )
         self.balloon.bind(self.sortby_metric, 'Error metric to use when sorting states (state = reset)')
-        for text in ['MAE', 'pearson', 'RMSE', 'state', 'weight']:
+        for text in ['MAE', 'pearson', 'RMSE', 'state', 'weight', 'clusters']:
             self.sortby_metric.add(text)
         self.sortby_metric.setvalue('MAE')
         self.larmord_error_metric = 'MAE'
@@ -590,6 +602,16 @@ class PyShiftsPlugin:
                         )
         self.balloon.bind(self.error_ndisplay_ent, "Number of models with lowest error (or highest correlation coefficiencts) to display")
 
+        self.min_size_ent = Pmw.EntryField(group_error,
+                        labelpos = 'w',
+                        label_text='Minimum size [SKLEARN]:',
+                        value = 10,
+                        entry_width = 3,
+                        entry_textvariable=self.min_size
+                        )
+        self.balloon.bind(self.min_size_ent, "Minimum size of samples need to define a neighborhood")
+
+
         # Arrange widgets using grid
         padx = 5
         pady = 5
@@ -603,6 +625,7 @@ class PyShiftsPlugin:
         self.error_color_ent.grid(sticky='we', row=6, column=0, columnspan=2, pady=pady, padx=padx)
         self.error_scale_ent.grid(sticky='we', row=7, column=0, columnspan=2, pady=pady, padx=padx)
         self.error_ndisplay_ent.grid(sticky='we', row=8, column=0, columnspan=2, pady=pady, padx=padx)
+        self.min_size_ent.grid(sticky='we', row=9, column=0, columnspan=2, pady=pady, padx=padx)
 
         group_advanc.grid(row=0, column=0)
         page.columnconfigure(0, weight=1)
@@ -709,6 +732,9 @@ class PyShiftsPlugin:
             self.disableNuclei()
         if tag in ['weight']:
             self.larmord_error_metric = 'weight'
+            self.disableNuclei()
+        if tag in ['clusters']:
+            self.larmord_error_metric = 'clusters'
             self.disableNuclei()
 
     def sortByNucleusCallBack(self, tag):
@@ -1151,7 +1177,30 @@ class PyShiftsPlugin:
         # rewrite out files
         self.cs_matrix.to_csv(self.sim_fn, sep = ' ', header = None)
         pd.DataFrame([self.sim_matrix[0], self.error_matrix[0]]).transpose().to_csv(self.exp_fn, sep = ' ', index_label = '#', header = ['DATA=JCOUPLINGS', 'PRIOR=GAUSS'])
-    
+
+    def prepare_for_clustering(self):
+        states = [i for i in range(1,1+cmd.count_states(self.pymol_sel.get()))]
+        
+        # get predicted chemical shifts
+        predCS_data_ext = self.predCS_data_ext[self.predCS_data_ext['state'].isin(states)]
+        
+        # merge data
+        self.clusterCS = predCS_data_ext.merge(self.larmord_acc_ext, on = ['resname', 'nucleus'])
+        self.clusterCS = self.clusterCS.sort_values(['nucleus', 'resid', 'state'], ascending=[None,True,True])
+        
+        # shape into matrices
+        nrow = len(self.clusterCS.state.unique())
+        self.clusterCS = self.clusterCS.predCS.values.reshape(-1, nrow).transpose()
+
+    def run_clustering(self):
+        X = self.clusterCS
+        X = StandardScaler().fit_transform(self.clusterCS)
+        m = KMeans(n_clusters=self.min_size.get()).fit(X)
+        m.fit(X)
+        clusters = list(m.labels_)
+        clusters.insert(0,0)
+        return(clusters)
+
     def prepare_file_for_analysis(self, predictor, sel_name, objname):
         one_obj_sel = '%s and %s' % (sel_name, objname)
         pdb_fn = None
@@ -1176,7 +1225,7 @@ class PyShiftsPlugin:
         """
         # Get Larmord data from predictor and save to dictionary larmord_predCS
         pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
-        larmord_cmd = '%s/larmord -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
+        larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
         os.system(larmord_cmd)
         larmord_predCS = self.parse_larmord_output(larmord_tmpout_fn)
         # Get Ramsey data from predictor and save to dictionary ramsey_predCS
@@ -1216,7 +1265,7 @@ class PyShiftsPlugin:
         else:
             if (self.get_shifts_from_larmord):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
-                larmord_cmd = '%s/larmord -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
+                larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
                 os.system(larmord_cmd)
             if (self.get_shifts_from_ramsey):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Ramsey', sel_name, objname)
@@ -1241,7 +1290,7 @@ class PyShiftsPlugin:
 
     ## Functions related to self.runCompare()
     def runBME(self):
-        bmea = bme.Reweight(verbose=TRUE)
+        bmea = bme.Reweight(verbose=VERBOSE)
     
         # load data
         bmea.load(self.exp_fn, self.sim_fn)
@@ -1594,7 +1643,7 @@ class PyShiftsPlugin:
     
                     psico.exporting.save_traj(filename = dcd_fn, selection = objname)
                     cmd.save(filename = pdb_fn, selection = objname, state = 1)
-                    larmord_cmd = '%s/larmord -cutoff 15.0 -csfile %s -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_cs.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                    larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
                     #print(larmord_cmd)
                     os.system(larmord_cmd)
                     self.larmord_cs2_internal = larmord_tmpout_fn
@@ -1672,6 +1721,8 @@ class PyShiftsPlugin:
         # load MAEs and maybe prep for BME
         if self.weighted_errors:
             self.load_MAE()
+            if self.SKLEARN:
+                self.prepare_for_clustering()
             if self.BME:
                 self.prepare_bme_files()
         else:
@@ -1688,7 +1739,8 @@ class PyShiftsPlugin:
             # reset progress bar
             self.m.set(0)
             temp = '%s and %s' % (sel_name, objname)
-            w_opt = []
+            w_opt = [1.0]
+            clusters = [-2]
             self.sel_obj_list.append(temp)
             for a in range(1,1+cmd.count_states("(all)")):
                 cmd.frame(a)
@@ -1700,9 +1752,11 @@ class PyShiftsPlugin:
                 cmd.save(filename=pdb_fn, selection=temp)
                 progress = float(a)/float((cmd.count_states("(all)")))
                 w_opt.append(1.0)
+                clusters.append(-1)
                 self.m.set(progress)
 
         # initial best indices
+        # try to cluster
         self.runSort()
         self.analyzeButton.button(0).config(state = 'normal')
         self.tableButton.button(1).config(state = 'normal')
@@ -1715,20 +1769,27 @@ class PyShiftsPlugin:
         'Sort' -> self.runSort -> self.showModels -> self.runRender
         """
         self.resetCSTable()
+
+        if self.SKLEARN:
+            self.clusters = self.run_clustering()
+            print("SHOULD BE ABLE TO RUN SKLEARN: %s"%self.clusters)
+        else:
+            self.clusters = clusters
+        # sort 
         if self.BME:
             theta = self.runBME()
             print(self.w_opt)
             print("BME %s %s %s"%(len(self.w_opt), np.sum(self.w_opt), theta))
         else:
             self.w_opt = w_opt
-        
+
         metric = self.larmord_error_metric
         if metric in ['MAE']:
             self.sort_error()
         else:
             self.sort_coef()
         self.printError(self.best_model_indices)
-        self.showModels()
+        self.showModels()   
         return True
 
     ## Methods and callback functions related to error table
@@ -1751,13 +1812,13 @@ class PyShiftsPlugin:
         self.reset_errorTable()
         nucleus = self.larmord_error_sel
         if nucleus == 'proton':
-            self.table_header = 'state_number proton_error Pearson_proton RMSE_proton w_opt'
+            self.table_header = 'state_number proton_error Pearson_proton RMSE_proton w_opt clusters'
         if nucleus == 'carbon':
-            self.table_header = 'state_number carbon_error Pearson_carbon RMSE_carbon w_opt'
+            self.table_header = 'state_number carbon_error Pearson_carbon RMSE_carbon w_opt clusters'
         if nucleus == 'nitrogen':
-            self.table_header = 'state_number nitrogen_error Pearson_nitrogen RMSE_nitrogen w_opt'
+            self.table_header = 'state_number nitrogen_error Pearson_nitrogen RMSE_nitrogen w_opt clusters'
         if nucleus == 'all':
-            self.table_header = 'state_number total_error Pearson_coef RMSE_coef w_opt'
+            self.table_header = 'state_number total_error Pearson_coef RMSE_coef w_opt clusters'
         self.table_header = string.split(self.table_header)
 
         #Initialize state_number array
@@ -1798,7 +1859,7 @@ class PyShiftsPlugin:
             errorTable.write(dataline)
 
         # When metric in {everthing else}
-        for self.larmord_error_metric in ['MAE', 'pearson', 'RMSE', 'weight',]:
+        for self.larmord_error_metric in ['MAE', 'pearson', 'RMSE', 'weight', 'clusters',]:
             metric = self.larmord_error_metric
             for self.larmord_error_sel in ['proton', 'carbon', 'nitrogen', 'all']:
                 nucleus = self.larmord_error_sel
@@ -1902,9 +1963,19 @@ class PyShiftsPlugin:
             self.sort_state_number()
         if metric in ['weight']:
             self.sort_weight()
+        if metric in ['clusters']:
+            self.sort_clusters()
 
     def sort_weight(self):
         self.best_model_indices = np.argsort(self.w_opt)[::-1]
+        return True
+
+    def sort_clusters(self):
+        clusters = []
+        for c in range(1, len(self.clusters)):
+            clusters.append(self.clusters[c])
+        self.best_model_indices = np.argsort(clusters)[::-1] + 1
+        print(self.best_model_indices)
         return True
 
     def sort_Pearson_coef(self):

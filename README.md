@@ -10,6 +10,7 @@ Pyshifts is a plugin in PyMOL. Tested on Pymol >= v2.0 and Python3. Should work 
         source activate pyshifts
         conda install pandas
         conda install scipy
+        conda install -c anaconda scikit-learn 
         source deactivate pyshifts
         
 #### 2. PyMOL 
