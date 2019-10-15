@@ -1195,7 +1195,7 @@ class PyShiftsPlugin:
     def run_clustering(self):
         X = self.clusterCS
         X = StandardScaler().fit_transform(self.clusterCS)
-        m = KMeans(n_clusters=self.min_size.get()).fit(X)
+        m = KMeans(n_clusters=self.min_size.get(), random_state=0).fit(X)
         m.fit(X)
         clusters = list(m.labels_)
         clusters.insert(0,0)
