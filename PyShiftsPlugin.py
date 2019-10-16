@@ -187,11 +187,11 @@ class PyShiftsPlugin:
         if 'LARMORD_BIN' in os.environ:
             if VERBOSE: print('Found LARMORD_BIN in environmental variables', os.environ['LARMORD_BIN'])
             self.larmord_bin.set(os.environ['LARMORD_BIN'])
-            #self.larmord_cs.set(os.environ['LARMORD_BIN']+"/../../test/measured_shifts_2KOC.dat")#for test use only
-            self.larmord_cs.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/measured_shifts_fsw_freeES1.dat")#for test use only
+            self.larmord_cs.set("/Users/afrankz/Documents/GitHub/PyShifts/test/measured_shifts_2N82.dat")#for test use only
+            #self.larmord_cs.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/measured_shifts_fsw_freeES1.dat")#for test use only
             #self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../test/predCS_test.dat")#for test use only
             self.larmord_cs2.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/shifts.txt")#for test use only
-            self.pymol_sel.set("test")#for test use only
+            self.pymol_sel.set("2N82_2N7X")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
             self.larmord_ref.set(os.environ['LARMORD_BIN']+"/../data/larmorD_reference_shifts_rna.dat")
             self.larmord_acc.set(os.environ['LARMORD_BIN']+"/../data/testAccuracy.dat")
@@ -248,13 +248,6 @@ class PyShiftsPlugin:
                                        )
         self.balloon.bind(self.pymol_sel_ent, 'Enter the Pymol object for the structure(s) that should be used in this analysis')
 
-        self.larmord_cs_ent = Pmw.EntryField(group_struc,
-                                      label_text='Chemical Shift File:', labelpos='wn',
-                                      entry_textvariable=self.larmord_cs,
-                                      entry_width=10)
-        self.balloon.bind(self.larmord_cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or RAMSEY or reference chemical shifts supplied by the user.      \n[Format:residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
-        self.larmord_cs_but = tkinter.Button(group_struc, text = 'Browse...', command = self.getLarmordCS)
-
         # Larmord_cs2 entry serves as the path to predicted chemical shifts file when in 'Analyze shifts' mode
         # Disabled when in 'Compute and Analyze shifts' mode
         self.larmord_cs2_ent = Pmw.EntryField(group_struc,
@@ -289,15 +282,12 @@ class PyShiftsPlugin:
         padx = 5
         self.pymol_sel_ent.grid(sticky='we', row=0, column=0, columnspan=5,  pady=pady, padx=padx)
         self.mode_radio.grid(sticky='we', row=1, column=2, columnspan=3, pady=pady, padx=padx)
-        self.larmord_cs_ent.grid(sticky='we', row=2, column=0, columnspan=4, pady=pady, padx=padx)
-        self.larmord_cs_but.grid(sticky='we', row=2, column=4,  pady=pady, padx=padx)
-        self.larmord_cs2_ent.grid(sticky='we', row=3, column=0, columnspan=4, pady=pady, padx=padx)
-        self.larmord_cs2_but.grid(sticky='we', row=3, column=4,  pady=pady, padx=padx)
+        self.larmord_cs2_ent.grid(sticky='we', row=2, column=0, columnspan=4, pady=pady, padx=padx)
+        self.larmord_cs2_but.grid(sticky='we', row=2, column=4,  pady=pady, padx=padx)
 
         page.columnconfigure(0, weight=1)
         page.rowconfigure(0, weight = 1)
         page.rowconfigure(1, weight = 0)
-
 
         ######################
         ## Tab : Table Tab
@@ -407,6 +397,15 @@ class PyShiftsPlugin:
         # initialize buttons as disabled
         for button in range(self.save_CStable.numbuttons()):
             self.save_CStable.button(button).config(state = 'disabled')
+        
+        # Reference chemical shift file
+        self.larmord_cs_ent = Pmw.EntryField(group_table,
+                                      label_text='Chemical Shift File:', labelpos='wn',
+                                      entry_textvariable=self.larmord_cs,
+                                      entry_width=10)
+        self.balloon.bind(self.larmord_cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or RAMSEY or reference chemical shifts supplied by the user.      \n[Format:residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
+        self.larmord_cs_but = tkinter.Button(group_table, text = 'Browse...', command = self.getLarmordCS)
+
 
         """
         Radio button for nuclei selection --
@@ -454,8 +453,10 @@ class PyShiftsPlugin:
         group_CStable.grid(sticky=W, row=1, column=40, rowspan = 15, columnspan = 50, padx=padx, pady=pady)
         self.save_CStable.grid(sticky=W, row=16, column=0, rowspan = 1, columnspan = 60, padx=padx, pady=pady)
         self.sort_CStable.grid(sticky=W, row=16, column=60, rowspan = 1, columnspan = 30, padx=padx, pady=pady)
-        self.sortby_nucleus.grid(sticky='we', row=17, column=0, columnspan = 50, pady=pady)
-        self.sortby_metric.grid(sticky='we', row=17, column=50, columnspan = 30, pady=pady)
+        self.larmord_cs_ent.grid(sticky='we', row=17, column=0, columnspan=4, pady=pady, padx=padx)
+        self.larmord_cs_but.grid(sticky='we', row=17, column=4,  pady=pady, padx=padx)
+        self.sortby_nucleus.grid(sticky='we', row=18, column=0, columnspan = 50, pady=pady)
+        self.sortby_metric.grid(sticky='we', row=18, column=50, columnspan = 30, pady=pady)
 
         group_table.columnconfigure(0, weight=1)
         group_table.columnconfigure(50, weight=1)
@@ -1063,6 +1064,12 @@ class PyShiftsPlugin:
     def load_measuredCS(self):
         # load measured Chemical shift data from file
         # If measurd CS file not given, an error box will pop up and return false
+
+        # check files measured
+        if not self.check_file(self.larmord_cs.get()):
+            self.print_file_error(self.larmord_cs.get())
+            return False
+        
         self.reset_measuredCS()
         print('loading measured chemical shift from file...')
         if self.check_file(self.larmord_cs.get()):
@@ -1403,7 +1410,6 @@ class PyShiftsPlugin:
             predCS = self.predictedCS[state_number - 1][key]
             k1 = (ch, resid, resname, nucleus)
             k2 = str(resname+":"+nucleus).strip()
-
             # try to get mae (expected error)
             try:
                 mae = self.mae[k2]
@@ -1413,16 +1419,19 @@ class PyShiftsPlugin:
             # try to get measured chemical shifts for each predicted value
             try:
                 expCS = self.measuredCS[key]
-
+                
                 # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
                 if nucleus in self.carbon_list:
                     if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        self.outlier_keys.append(key)
                         continue
                 if nucleus in self.proton_list:
                     if (np.abs(predCS - expCS - self.larmord_proton_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        self.outlier_keys.append(key)
                         continue
                 if nucleus in self.nitrogen_list:
                     if (np.abs(predCS - expCS - self.larmord_nitrogen_offset.get())) > mae * self.larmord_outlier_threshold.get():
+                        self.outlier_keys.append(key)
                         continue
 
                 list_expCS.append(expCS)
@@ -1462,6 +1471,9 @@ class PyShiftsPlugin:
             total_error += np.abs(error)
             cmd.alter("resi %s and n. %s"%(resid, nucleus), "b=%s"%error)
 
+        # print
+        print(self.outlier_keys)
+        
         # all shifts
         pearson = self.computePearson('total', output_total, ntotal, state_number)
         self.Pearson_coef.append(pearson)
@@ -1607,16 +1619,14 @@ class PyShiftsPlugin:
 
         # reset predicted and measured chemical shifts(if ever loaded) before running analysis
         self.reset_predictedCS()
-
+        
+        # reset outliers keys
+        self.outlier_keys = []
+        
         # checking selection
         sel_name = self.check_selection(sel)
         if (not sel_name):
           return False
-
-        # check files
-        if not self.check_file(self.larmord_cs.get()):
-            self.print_file_error(self.larmord_cs.get())
-            return False
         
         # each object in the selection is treated as an independent struc
         cmd.enable(sel_name) # enable selection
@@ -1671,6 +1681,7 @@ class PyShiftsPlugin:
               self.m.set(progress)
         self.analyzeButton.button(0).config(state = 'normal')
         self.tableButton.button(0).config(state = 'normal')
+        self.notebook.nextpage()
         return True
 
     def runCompare(self):
