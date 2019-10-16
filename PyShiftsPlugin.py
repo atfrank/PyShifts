@@ -1161,8 +1161,11 @@ class PyShiftsPlugin:
     def prepare_bme_files(self):
         states = [i for i in range(1,1+cmd.count_states(self.pymol_sel.get()))]
         predCS_data_ext = self.predCS_data_ext[self.predCS_data_ext['state'].isin(states)]
+        
         # merge data
-        self.mergedCS = predCS_data_ext.merge(self.expCS_data_ext, on = ['resname', 'resid', 'nucleus'])
+        self.expCS_data_ext['keys'] = self.expCS_data_ext.agg('{0[resid]}:{0[resname]}:{0[nucleus]}'.format, axis=1)
+        expCS_data_ext = self.expCS_data_ext[~self.expCS_data_ext['keys'].isin(self.outlier_keys)]
+        self.mergedCS = predCS_data_ext.merge(expCS_data_ext, on = ['resname', 'resid', 'nucleus'])
         self.mergedCS = self.mergedCS.merge(self.larmord_acc_ext, on = ['resname', 'nucleus'])
         self.mergedCS = self.mergedCS.sort_values(['nucleus', 'resid', 'state'], ascending=[None,True,True])
         print(self.mergedCS.head())
@@ -1311,7 +1314,7 @@ class PyShiftsPlugin:
                 bme_converged = True
             except:
                 theta+=1.0
-        self.w_opt = list(np.round_(bmea.get_weights(), 4))
+        self.w_opt = list(np.round_(bmea.get_weights(), 5))
         self.w_opt.insert(0,0)
         return(theta)
     
@@ -1470,9 +1473,6 @@ class PyShiftsPlugin:
             ntotal +=1
             total_error += np.abs(error)
             cmd.alter("resi %s and n. %s"%(resid, nucleus), "b=%s"%error)
-
-        # print
-        print(self.outlier_keys)
         
         # all shifts
         pearson = self.computePearson('total', output_total, ntotal, state_number)
@@ -1732,10 +1732,6 @@ class PyShiftsPlugin:
         # load MAEs and maybe prep for BME
         if self.weighted_errors:
             self.load_MAE()
-            if self.SKLEARN:
-                self.prepare_for_clustering()
-            if self.BME:
-                self.prepare_bme_files()
         else:
             self.reset_MAE()
 
@@ -1750,7 +1746,7 @@ class PyShiftsPlugin:
             # reset progress bar
             self.m.set(0)
             temp = '%s and %s' % (sel_name, objname)
-            w_opt = [1.0]
+            self.null_w_opt = [1.0]
             clusters = [-2]
             self.sel_obj_list.append(temp)
             for a in range(1,1+cmd.count_states("(all)")):
@@ -1762,13 +1758,16 @@ class PyShiftsPlugin:
                 pdb_fn = obj_new+".pdb"
                 cmd.save(filename=pdb_fn, selection=temp)
                 progress = float(a)/float((cmd.count_states("(all)")))
-                w_opt.append(1.0)
+                self.null_w_opt.append(1.0)
                 clusters.append(-1)
                 self.m.set(progress)
 
         # initial best indices
-        # try to cluster
         self.runSort()
+        
+        # finalize outlier key
+        self.outlier_keys = list(set(self.outlier_keys))
+
         self.analyzeButton.button(0).config(state = 'normal')
         self.tableButton.button(1).config(state = 'normal')
         self.tableButton.button(0).config(state = 'normal')
@@ -1780,6 +1779,11 @@ class PyShiftsPlugin:
         'Sort' -> self.runSort -> self.showModels -> self.runRender
         """
         self.resetCSTable()
+        # setup files for clustering and weighting
+        if self.SKLEARN:
+            self.prepare_for_clustering()
+        if self.BME:
+            self.prepare_bme_files()
 
         if self.SKLEARN:
             self.clusters = self.run_clustering()
@@ -1787,12 +1791,13 @@ class PyShiftsPlugin:
         else:
             self.clusters = clusters
         # sort 
+        
         if self.BME:
             theta = self.runBME()
             print(self.w_opt)
             print("BME %s %s %s"%(len(self.w_opt), np.sum(self.w_opt), theta))
         else:
-            self.w_opt = w_opt
+            self.w_opt = self.null_w_opt
 
         metric = self.larmord_error_metric
         if metric in ['MAE']:
@@ -1800,7 +1805,7 @@ class PyShiftsPlugin:
         else:
             self.sort_coef()
         self.printError(self.best_model_indices)
-        self.showModels()   
+        self.showModels()
         return True
 
     ## Methods and callback functions related to error table
