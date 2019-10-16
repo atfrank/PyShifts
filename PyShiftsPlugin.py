@@ -715,7 +715,6 @@ class PyShiftsPlugin:
         return True
 
     def sortByMetricCallBack(self, tag):
-        self.larmord_error_metric = 'MAE'
         if tag in ['pearson']:
             self.enableNuclei()
             self.larmord_error_metric = 'pearson'
@@ -725,6 +724,9 @@ class PyShiftsPlugin:
         if tag in ['spearman']:
             self.enableNuclei()
             self.larmord_error_metric = 'spearman'
+        if tag in ['MAE']:
+            self.enableNuclei()
+            self.larmord_error_metric = 'MAE'
         if tag in ['RMSE']:
             self.enableNuclei()
             self.larmord_error_metric = 'RMSE'
@@ -1162,9 +1164,19 @@ class PyShiftsPlugin:
         states = [i for i in range(1,1+cmd.count_states(self.pymol_sel.get()))]
         predCS_data_ext = self.predCS_data_ext[self.predCS_data_ext['state'].isin(states)]
         
-        # merge data
+        # remove data flagged as outlier
         self.expCS_data_ext['keys'] = self.expCS_data_ext.agg('{0[resid]}:{0[resname]}:{0[nucleus]}'.format, axis=1)
         expCS_data_ext = self.expCS_data_ext[~self.expCS_data_ext['keys'].isin(self.outlier_keys)]
+    
+        # filter chemical shifts if needed
+        if self.larmord_error_sel == 'proton':
+            expCS_data_ext = expCS_data_ext[self.expCS_data_ext['nucleus'].isin(self.proton_list)]
+        if self.larmord_error_sel == 'carbon':
+            expCS_data_ext = expCS_data_ext[self.expCS_data_ext['nucleus'].isin(self.carbon_list)]
+        if self.larmord_error_sel == 'nitrogen':
+            expCS_data_ext = expCS_data_ext[self.expCS_data_ext['nucleus'].isin(self.nitrogen_list)]
+        
+        # merge predCS, expCS, and errors
         self.mergedCS = predCS_data_ext.merge(expCS_data_ext, on = ['resname', 'resid', 'nucleus'])
         self.mergedCS = self.mergedCS.merge(self.larmord_acc_ext, on = ['resname', 'nucleus'])
         self.mergedCS = self.mergedCS.sort_values(['nucleus', 'resid', 'state'], ascending=[None,True,True])
@@ -1765,9 +1777,6 @@ class PyShiftsPlugin:
         # initial best indices
         self.runSort()
         
-        # finalize outlier key
-        self.outlier_keys = list(set(self.outlier_keys))
-
         self.analyzeButton.button(0).config(state = 'normal')
         self.tableButton.button(1).config(state = 'normal')
         self.tableButton.button(0).config(state = 'normal')
@@ -1780,6 +1789,10 @@ class PyShiftsPlugin:
         """
         self.resetCSTable()
         # setup files for clustering and weighting
+        
+        # finalize outlier key
+        self.outlier_keys = list(set(self.outlier_keys))
+
         if self.SKLEARN:
             self.prepare_for_clustering()
         if self.BME:
@@ -1790,6 +1803,7 @@ class PyShiftsPlugin:
             print("SHOULD BE ABLE TO RUN SKLEARN: %s"%self.clusters)
         else:
             self.clusters = clusters
+        
         # sort 
         
         if self.BME:
