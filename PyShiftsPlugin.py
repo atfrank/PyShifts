@@ -166,9 +166,14 @@ class PyShiftsPlugin:
         self.carbon_list = ["C1'", "C2'", "C3'", "C4'", "C5'", "C2", "C5", "C6", "C8"]
         self.nitrogen_list = ["N1", "N3"]
         self.total_list = self.proton_list + self.carbon_list + self.nitrogen_list
+        
         self.ndisplayed = 10
         if self.ndisplayed > cmd.count_states(self.pymol_sel.get()): 
             self.ndisplayed = cmd.count_states(self.pymol_sel.get())
+        
+        self.min_size.set(2)
+        if self.min_size.get() > cmd.count_states(self.pymol_sel.get()): 
+            self.min_size.set(cmd.count_states(self.pymol_sel.get()))
         
         self.sel_obj_list = []
         # there may be more than one seletion or object defined by self.pymol_sel
@@ -235,7 +240,7 @@ class PyShiftsPlugin:
                             frame_borderwidth = 2,
                             frame_relief = 'groove',
                             )
-        self.analyzeButton.add('Execute', command = self.runAnalysis)
+        self.analyzeButton.add('Predict or Load Chemical Shifts', command = self.runAnalysis)
         #self.analyzeButton.pack(fill='both', expand=True, padx=25, pady=25)
         self.analyzeButton.button(0).grid(sticky=N, row=0)
         group_struc.grid(row = 0, column = 0)
@@ -302,9 +307,9 @@ class PyShiftsPlugin:
                             orient = 'horizontal',
                             labelpos = 'w',
                             )
-        self.tableButton.add('Compare shifts', command = self.runCompare)
+        self.tableButton.add('Compare Chemcial Shifts', command = self.runCompare)
         self.tableButton.add('Sort', command = self.runSort)
-        self.tableButton.grid(sticky=N, row=1)
+        self.tableButton.grid(sticky='we', row=1, columnspan=2)
         # disable all other buttons in the current tab before computing predicted chemical shifts
         self.tableButton.button(1).config(state = 'disabled')
         self.tableButton.button(0).config(state = 'disabled')
@@ -416,7 +421,7 @@ class PyShiftsPlugin:
                         orient = 'horizontal',
                         labelpos = 'w',
                         command = self.sortByNucleusCallBack,
-                        label_text = 'Nuclei:',
+                        label_text = 'Comparison Nuclei:',
                         hull_borderwidth = 2,
                         hull_relief = 'ridge',
                 )
@@ -435,7 +440,7 @@ class PyShiftsPlugin:
                         orient = 'horizontal',
                         labelpos = 'w',
                         command = self.sortByMetricCallBack,
-                        label_text = 'Metric:',
+                        label_text = 'Sorting Metric:',
                         hull_borderwidth = 2,
                         hull_relief = 'ridge',
                 )
@@ -605,12 +610,12 @@ class PyShiftsPlugin:
 
         self.min_size_ent = Pmw.EntryField(group_error,
                         labelpos = 'w',
-                        label_text='Minimum size [SKLEARN]:',
-                        value = 10,
+                        label_text='Number of clusters [SKLEARN]:',
+                        value = 2,
                         entry_width = 3,
                         entry_textvariable=self.min_size
                         )
-        self.balloon.bind(self.min_size_ent, "Minimum size of samples need to define a neighborhood")
+        self.balloon.bind(self.min_size_ent, "Number of clusters K-means should return")
 
 
         # Arrange widgets using grid
@@ -654,7 +659,7 @@ class PyShiftsPlugin:
     def disableAll(self):
         """
         Disable all buttons in the dialog(except for 'Exit')
-        Will be called when the user click on 'Execute' or 'Compare shifts'
+        Will be called when the user click on 'Predict or Load Chemical Shifts' or 'Compare shifts'
         Purpose: avoid unnecassary repeted running caused by double click
         """
         for button in range(self.tableButton.numbuttons()):
@@ -742,6 +747,7 @@ class PyShiftsPlugin:
 
     def sortByNucleusCallBack(self, tag):
         self.larmord_error_sel = 'all'
+        #self.tableButton.button(1).config(state = 'disabled')
         if tag in ['proton']:
             self.larmord_error_sel = 'proton'
         if tag in ['carbon']:
@@ -1609,10 +1615,10 @@ class PyShiftsPlugin:
         self.resetCSTable()
         cmd.enable("best*")
 
-    ## Primary buttons ('Execute', 'Compare', 'Sort') callback functions
+    ## Primary buttons ('Predict or Load Chemical Shifts', 'Compare', 'Sort') callback functions
     def runAnalysis(self):
         """
-        Callback function for 'Execute' button in 'Options' tab
+        Callback function for 'Predict or Load Chemical Shifts' button in 'Options' tab
         Run larmord over all states within one object
         Call self.runAnalysisOneState in each loop and loop over all states
         """
@@ -2359,11 +2365,11 @@ class PyShiftsPlugin:
         """
         if butcmd == 'OK':
             print('is everything OK?')
-        elif butcmd == 'Execute':
+        elif butcmd == 'Predict or Load Chemical Shifts':
             rtn = self.runAnalysis()
             if rtn and VERBOSE:
                  print('Done with Larmord!')
-        elif butcmd == 'Compare Shifts':
+        elif butcmd == 'Compare Chemcial Shifts':
             rtn = self.runCompare()
             if rtn and VERBOSE:
                  print('Done comparing chemical shifts!')
