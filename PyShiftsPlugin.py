@@ -1294,6 +1294,7 @@ class PyShiftsPlugin:
             if (self.get_shifts_from_larmord):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
                 larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
+                self.predCS_data_ext = larmord_tmpout_fn
                 os.system(larmord_cmd)
             if (self.get_shifts_from_ramsey):
                 pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Ramsey', sel_name, objname)
@@ -1304,7 +1305,7 @@ class PyShiftsPlugin:
                 os.system(larmord_cmd)
                 os.system(ramsey_format_cmd)
             # Here call function self.parse_larmord_output and save predicted CS data to a global dictionary self.predCS
-            if not self.get_shifts_from_file:
+            if self.get_shifts_from_larmord:
                 predCS = self.parse_larmord_output(larmord_tmpout_fn)
                 self.predictedCS.append(predCS.copy())
             else:
@@ -1684,13 +1685,13 @@ class PyShiftsPlugin:
             if self.get_shifts_from_file_larmord:
                 self.predCS_data_ext = pd.read_csv(self.larmord_cs2_internal, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                 print("from internal file")
-            if self.get_shifts_from_file and self.get_shifts_from_larmord: self.get_shifts_from_larmord = False
+            if self.get_shifts_from_file or self.get_shifts_from_file_larmord: 
+                self.get_shifts_from_larmord = False
+                # check for mismatch between  number of states in external file and number states in pymol object
+                if self.check_states_mismatch():
+                    self.print_mismatch_error()
+                    return False
 
-            # check for mismatch between  number of states in external file and number states in pymol object
-            if self.check_states_mismatch():
-                self.print_mismatch_error()
-                return False
-            
             # loop over states
             for a in range(1,1+cmd.count_states("(all)")):
               cmd.frame(a)
@@ -1765,7 +1766,7 @@ class PyShiftsPlugin:
             self.m.set(0)
             temp = '%s and %s' % (sel_name, objname)
             self.null_w_opt = [1.0]
-            clusters = [-2]
+            self.null_clusters = [-1]
             self.sel_obj_list.append(temp)
             for a in range(1,1+cmd.count_states("(all)")):
                 cmd.frame(a)
@@ -1777,7 +1778,7 @@ class PyShiftsPlugin:
                 cmd.save(filename=pdb_fn, selection=temp)
                 progress = float(a)/float((cmd.count_states("(all)")))
                 self.null_w_opt.append(1.0)
-                clusters.append(-1)
+                self.null_clusters.append(-1)
                 self.m.set(progress)
 
         # initial best indices
@@ -1798,21 +1799,16 @@ class PyShiftsPlugin:
         
         # finalize outlier key
         self.outlier_keys = list(set(self.outlier_keys))
-
-        if self.SKLEARN:
+        if self.SKLEARN and cmd.count_states(self.pymol_sel.get()) > 1:
             self.prepare_for_clustering()
-        if self.BME:
+        if self.BME and cmd.count_states(self.pymol_sel.get()) > 1:
             self.prepare_bme_files()
-
-        if self.SKLEARN:
+        if self.SKLEARN  and cmd.count_states(self.pymol_sel.get()) > 1:
             self.clusters = self.run_clustering()
             print("SHOULD BE ABLE TO RUN SKLEARN: %s"%self.clusters)
         else:
-            self.clusters = clusters
-        
-        # sort 
-        
-        if self.BME:
+            self.clusters = self.null_clusters
+        if self.BME and cmd.count_states(self.pymol_sel.get()) > 1:
             theta = self.runBME()
             print(self.w_opt)
             print("BME %s %s %s"%(len(self.w_opt), np.sum(self.w_opt), theta))
