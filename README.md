@@ -44,7 +44,6 @@ You can obtain PYMOL [here](https://pymol.org/2/).
 
 
 ## Using Pyshifts
-For more detailed instructions, read the [user guide](https://github.com/atfrank/PyShifts/blob/master/user_guide/Pyshifts_manual.pdf). 
 
 1. Load the object to be analyzed in PyMOL.
 

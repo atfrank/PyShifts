@@ -1072,29 +1072,25 @@ class PyShiftsPlugin:
     def load_measuredCS(self):
         # load measured Chemical shift data from file
         # If measurd CS file not given, an error box will pop up and return false
-
-        # check files measured
-        if not self.check_file(self.larmord_cs.get()):
-            self.print_file_error(self.larmord_cs.get())
-            return False
         
         self.reset_measuredCS()
         print('loading measured chemical shift from file...')
         if self.check_file(self.larmord_cs.get()):
-            #expCS_data = np.loadtxt(self.larmord_cs.get(), dtype=expCS_type)
+            # read in from external file
             expCS_data = pd.read_csv(self.larmord_cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
             self.expCS_data_ext = expCS_data
             measured_resname = expCS_data['resname'].values
             measured_resid = expCS_data['resid'].values
             measured_nucleus = expCS_data['nucleus'].values
             measured_csvalue = expCS_data['expCS'].values
-            print(expCS_data)
             for res in range(len(measured_resid)):
                 k2 = str(measured_resid[res])+":"+str(measured_resname[res])+":"+str(measured_nucleus[res])
                 self.measuredCS[k2] = measured_csvalue[res]
         else:
-            self.print_file_error(self.larmord_cs.get())
-            return False
+            print(self.predictedCS[0].keys())
+            self.reset_measuredCS()
+            for key in self.predictedCS[0].keys():
+                self.measuredCS[key] = self.predictedCS[0][key]
 
     ## Functions related to self.runAnalysis()
     def conv_resname_format(self):
