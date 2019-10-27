@@ -42,16 +42,14 @@ You can obtain PYMOL [here](https://pymol.org/2/).
         export PSICO=/home/XXX/GitHub/pymol-psico/
         export PYTHONPATH="${PSICO}:$PYTHONPATH"
 
-
 ## Using Pyshifts
 
 1. Load the object to be analyzed in PyMOL.
 
-2. Run Pyshifts through Plugin -> Pyshifts. There are a progress bar, four tabs and one 'Exit' button in the pop-up window. The first tab 'Options' include basic options for Pyshifts and main 'Execute' button. In the second tab 'Error Analysis', table results will be shown and there are options about sorting tables. In the 'Advanced Options' tab, there are a few options on error offset and rendering error in PyMOL.
+2. Run Pyshifts through Plugin -> Pyshifts. There are a progress bar, four tabs and one 'Exit' button in the pop-up window. The first tab 'Options' include basic options for Pyshifts and main 'Predict or Load Chemical Shifts' button. In the second tab 'Error Analysis', table results will be shown and there are options about sorting tables. In the 'Advanced Options' tab, there are a few options on error offset and rendering error in PyMOL.
 
 3. Following the simple steps below to analyze and visualize error
-  - Change the 'PyMOL selection/ object' entry to the name of your target object and Execute. Pyshifts will automatically use both Larmord and Ramsey to predict chemical shifts of each states in your target object.
-  - Change the 'Chemical Shift File' entry to the file path of experimental chemical shifts data of your target object.
+  - Change the 'PyMOL selection/ object' entry to the name of your target object and 'Predict or Load Chemical Shifts'. Pyshifts will automatically use both Larmord to predict chemical shifts of each states in your target object.
   - Go to the second tab 'Error Analysis' and click on 'Compare shifts'. Error of each nuclei in each states will be shown in Error Table, and can also be visualized in PyMOL.
 
 ## Copyright Notice

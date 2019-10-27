@@ -120,11 +120,12 @@ class PyShiftsPlugin:
         self.parent = app.root
         self.pymol_sel     = tkinter.StringVar(self.parent)
         self.larmord_bin    = tkinter.StringVar(self.parent)
+        self.larmorca_bin    = tkinter.StringVar(self.parent)
         self.larmord_para    = tkinter.StringVar(self.parent)
         self.larmord_ref    = tkinter.StringVar(self.parent)
         self.larmord_acc    = tkinter.StringVar(self.parent)
-        self.larmord_cs    = tkinter.StringVar(self.parent)
-        self.larmord_cs2    = tkinter.StringVar(self.parent)
+        self.cs    = tkinter.StringVar(self.parent)
+        self.cs2    = tkinter.StringVar(self.parent)
         self.larmord_rlt_dict = {}
         self.larmord_error_all = {}
         self.larmord_error_carbon = {}
@@ -152,7 +153,7 @@ class PyShiftsPlugin:
         self.larmord_nitrogen_offset = tkinter.DoubleVar(self.parent)
         self.larmord_outlier_threshold = tkinter.DoubleVar(self.parent)
         self.get_shifts_from_larmord = True
-        self.get_shifts_from_ramsey = False
+        self.get_shifts_from_larmorca = False
         self.get_shifts_from_file = False
         self.weighted_errors = False
         self.larmord_error_sel = 'all'
@@ -162,9 +163,10 @@ class PyShiftsPlugin:
         
         # Initialize some variables
         # Define different types of nucleus of interest
-        self.proton_list = ["H1","H3","H1'", "H2'", "H3'", "H4'", "H5'",  "H5''", "H2", "H5", "H6", "H8"]
-        self.carbon_list = ["C1'", "C2'", "C3'", "C4'", "C5'", "C2", "C5", "C6", "C8"]
-        self.nitrogen_list = ["N1", "N3"]
+        self.proton_list = ["H1","H3","H1'", "H2'", "H3'", "H4'", "H5'",  "H5''", "H2", "H5", "H6", "H8", "H" "HN", "HA"]
+        self.carbon_list = ["C1'", "C2'", "C3'", "C4'", "C5'", "C2", "C5", "C6", "C8", "CA", "C", "CB"]
+        self.nitrogen_list = ["N1", "N3", "N"]
+
         self.total_list = self.proton_list + self.carbon_list + self.nitrogen_list
         
         self.ndisplayed = 10
@@ -192,32 +194,47 @@ class PyShiftsPlugin:
         if 'LARMORD_BIN' in os.environ:
             if VERBOSE: print('Found LARMORD_BIN in environmental variables', os.environ['LARMORD_BIN'])
             self.larmord_bin.set(os.environ['LARMORD_BIN'])
-            self.larmord_cs.set("/Users/afrankz/Documents/GitHub/PyShifts/test/measured_shifts_2N82.dat")#for test use only
-            #self.larmord_cs.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/measured_shifts_fsw_freeES1.dat")#for test use only
-            #self.larmord_cs2.set(os.environ['LARMORD_BIN']+"/../../test/predCS_test.dat")#for test use only
-            self.larmord_cs2.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/shifts.txt")#for test use only
-            self.pymol_sel.set("2N82_2N7X")#for test use only
+            self.cs.set("/Users/afrankz/Documents/GitHub/PyShifts/test/protein_cs.dat")#for test use only
+            self.cs2.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/shifts.txt")#for test use only
+            self.pymol_sel.set("my_protein")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
             self.larmord_ref.set(os.environ['LARMORD_BIN']+"/../data/larmorD_reference_shifts_rna.dat")
+            
             self.larmord_acc.set(os.environ['LARMORD_BIN']+"/../data/testAccuracy.dat")
         else:
             if VERBOSE: print('LARMORD_BIN not found in environmental variables.')
             self.larmord_bin.set('')
-
-
+        
+        if 'LARMORCA_BIN' not in os.environ and 'PYMOL_GIT_MOD' in os.environ:
+            if sys.platform.startswith('linux') and platform.machine() == 'x86_32':
+                initialdir_stride = os.path.join(os.environ['PYMOL_GIT_MOD'],"Larmorca","i86Linux2","larmorca")
+                os.environ['LARMORCA_BIN'] = initialdir_stride
+            elif sys.platform.startswith('linux') and platform.machine() == 'x86_64':
+                initialdir_stride = os.path.join(os.environ['PYMOL_GIT_MOD'],"Larmorca","ia64Linux2","larmorca")
+                os.environ['LARMORCA_BIN'] = initialdir_stride
+            else:
+                pass
+        # Set default file path
+        if 'LARMORCA_BIN' in os.environ:
+            if VERBOSE: print('Found LARMORCA_BIN in environmental variables', os.environ['LARMORCA_BIN'])
+            self.larmorca_bin.set(os.environ['LARMORCA_BIN'])
+        else:
+            if VERBOSE: print('LARMORCA_BIN not found in environmental variables.')
+            self.larmord_bin.set('')
+        
         # tooltips
         self.balloon = Pmw.Balloon(self.parent)
-
+        
         self.dialog = Pmw.Dialog(self.parent,
                                  buttons = ('Exit',),
                                  title = 'PyShifts Plugin for PyMOL',
                                  command = self.execute)
         self.dialog.component('buttonbox').button(0).pack(fill='both',expand = 1, padx=10)
         Pmw.setbusycursorattributes(self.dialog.component('hull'))
-
+        
         w = tkinter.Label(self.dialog.interior(),text = 'PyShifts Plugin for PyMOL\nby  Jingru Xie, Kexin Zhang, and Aaron T. Frank, 2016\n',background = 'black', foreground = 'yellow')
         w.pack(expand = 1, fill = 'both', padx = 8, pady = 5)
-
+        
         # add progress meter
         self.m = Meter(self.dialog.interior(), relief='ridge', bd=5)
         self.m.pack(expand = 1, padx = 10, pady = 5, fill='x')
@@ -255,17 +272,17 @@ class PyShiftsPlugin:
 
         # Larmord_cs2 entry serves as the path to predicted chemical shifts file when in 'Analyze shifts' mode
         # Disabled when in 'Compute and Analyze shifts' mode
-        self.larmord_cs2_ent = Pmw.EntryField(group_struc,
+        self.cs2_ent = Pmw.EntryField(group_struc,
                                         label_text='Predicted Chemical Shift File:', labelpos='wn',
-                                        entry_textvariable=self.larmord_cs2,
+                                        entry_textvariable=self.cs2,
                                         entry_width=10)
-        self.balloon.bind(self.larmord_cs2_ent, "Path to predicted chemical shifts data (only applicable in 'Other' mode) \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - should match the state in the Pymol object to ensure accurate mapping of difference is subsequent analysis                                          \nresidue_number - same as above                                        \nresidue_name - same as above                                         \nnucleus_name - same as above                                    \nCS_values_1 - comparison chemical shifts that, for a given nucleus, may change with model_index                                         \nCS_values_2 - can be any value since it is ignored in this part ")
-        self.larmord_cs2_but = tkinter.Button(group_struc, text = 'Browse...', command = self.getLarmordCS2)
+        self.balloon.bind(self.cs2_ent, "Path to predicted chemical shifts data (only applicable in 'Other' mode) \n[Format:model_index, residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                          \nmodel_index - should match the state in the Pymol object to ensure accurate mapping of difference is subsequent analysis                                          \nresidue_number - same as above                                        \nresidue_name - same as above                                         \nnucleus_name - same as above                                    \nCS_values_1 - comparison chemical shifts that, for a given nucleus, may change with model_index                                         \nCS_values_2 - can be any value since it is ignored in this part ")
+        self.cs2_but = tkinter.Button(group_struc, text = 'Browse...', command = self.getLarmordCS2)
 
-        self.larmord_cs2_but.configure(state = "disabled")
-        self.larmord_cs2_ent.component('entry').configure(state='disabled')
+        self.cs2_but.configure(state = "disabled")
+        self.cs2_ent.component('entry').configure(state='disabled')
 
-        # Mode selection: Larmord/ Ramsey/ External
+        # Mode selection: Larmord/ larmorca/ External
         self.mode_radio = Pmw.RadioSelect(group_struc,
                         buttontype = 'radiobutton',
                         orient = 'horizontal',
@@ -276,19 +293,19 @@ class PyShiftsPlugin:
                         hull_relief = 'ridge',
                 )
 
-        self.balloon.bind(self.mode_radio, 'Combined mode: chemical shifts will be computed using both LARMORD and RAMSEY and the result will be the average.\nRamsey mode: chemical shifts will be computed using RAMSEY.\nLarmord mode: chemical shifts will be computed using LARMORD.\nIn these three modes, computed chemical shifts will be compared to chemical shifts in the user supplied chemical shift file. \nOther mode: chemical shifts to be compared will be read from the user supplied chemical shift file.')
+        self.balloon.bind(self.mode_radio, 'LARMORD mode: chemical shifts will be computed using LARMORD.\nLARMORCA mode: chemical shifts will be computed using larmorca.\nOther mode: chemical shifts to be compared will be read from the user supplied chemical shift file.')
         # Add some buttons to the radiobuttons RadioSelect.
-        for text in ('Larmord', 'Other'):
+        for text in ('LARMORD', 'LARMORCA', 'Other'):
             self.mode_radio.add(text)
-        self.mode_radio.setvalue('Larmord')
+        self.mode_radio.setvalue('LARMORD')
 
         # Arrange widgets using grid
         pady = 10
         padx = 5
         self.pymol_sel_ent.grid(sticky='we', row=0, column=0, columnspan=5,  pady=pady, padx=padx)
         self.mode_radio.grid(sticky='we', row=1, column=2, columnspan=3, pady=pady, padx=padx)
-        self.larmord_cs2_ent.grid(sticky='we', row=2, column=0, columnspan=4, pady=pady, padx=padx)
-        self.larmord_cs2_but.grid(sticky='we', row=2, column=4,  pady=pady, padx=padx)
+        self.cs2_ent.grid(sticky='we', row=2, column=0, columnspan=4, pady=pady, padx=padx)
+        self.cs2_but.grid(sticky='we', row=2, column=4,  pady=pady, padx=padx)
 
         page.columnconfigure(0, weight=1)
         page.rowconfigure(0, weight = 1)
@@ -331,7 +348,7 @@ class PyShiftsPlugin:
         self.error_table.bind("<Double-Button-1>", self.sele_from_table)
         # Create the table header
         self.error_table.insert(1, 'Error Table'.center(50))
-        self.table_header = 'state MAE Pearson RMSE BME clusters'
+        self.table_header = 'state MAE R RMSE BME clusters'
         self.table_header = string.split(self.table_header)
 
         # Create row headers
@@ -363,7 +380,7 @@ class PyShiftsPlugin:
         self.CS_table.pack(side=LEFT, fill = BOTH, expand = 1)
         self.CS_table.bind("<Double-Button-1>", self.seleRes)
         # Create the table header
-        self.CS_table.insert(1, 'Chemical shift Table'.center(55))
+        self.CS_table.insert(1, 'Chemical Shift Table'.center(55))
         self.CStable_header = 'resname resid nuclei expCS predCS weighted_error'
         self.CStable_header = string.split(self.CStable_header)
 
@@ -404,12 +421,12 @@ class PyShiftsPlugin:
             self.save_CStable.button(button).config(state = 'disabled')
         
         # Reference chemical shift file
-        self.larmord_cs_ent = Pmw.EntryField(group_table,
+        self.cs_ent = Pmw.EntryField(group_table,
                                       label_text='Chemical Shift File:', labelpos='wn',
-                                      entry_textvariable=self.larmord_cs,
+                                      entry_textvariable=self.cs,
                                       entry_width=10)
-        self.balloon.bind(self.larmord_cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or RAMSEY or reference chemical shifts supplied by the user.      \n[Format:residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
-        self.larmord_cs_but = tkinter.Button(group_table, text = 'Browse...', command = self.getLarmordCS)
+        self.balloon.bind(self.cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or larmorca or reference chemical shifts supplied by the user.      \n[Format:residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
+        self.cs_but = tkinter.Button(group_table, text = 'Browse...', command = self.getLarmordCS)
 
 
         """
@@ -458,8 +475,8 @@ class PyShiftsPlugin:
         group_CStable.grid(sticky=W, row=1, column=40, rowspan = 15, columnspan = 50, padx=padx, pady=pady)
         self.save_CStable.grid(sticky=W, row=16, column=0, rowspan = 1, columnspan = 60, padx=padx, pady=pady)
         self.sort_CStable.grid(sticky=W, row=16, column=60, rowspan = 1, columnspan = 30, padx=padx, pady=pady)
-        self.larmord_cs_ent.grid(sticky='we', row=17, column=0, columnspan=4, pady=pady, padx=padx)
-        self.larmord_cs_but.grid(sticky='we', row=17, column=4,  pady=pady, padx=padx)
+        self.cs_ent.grid(sticky='we', row=17, column=0, columnspan=4, pady=pady, padx=padx)
+        self.cs_but.grid(sticky='we', row=17, column=4,  pady=pady, padx=padx)
         self.sortby_nucleus.grid(sticky='we', row=18, column=0, columnspan = 50, pady=pady)
         self.sortby_metric.grid(sticky='we', row=18, column=50, columnspan = 30, pady=pady)
 
@@ -478,7 +495,7 @@ class PyShiftsPlugin:
         """
         Larmord_file = False
         if Larmord_file:
-            group_larmord = tkinter.LabelFrame(page, text = 'Larmord')
+            group_larmord = tkinter.LabelFrame(page, text = 'LARMORD')
             group_larmord.pack(fill='both', expand=True, padx=5, pady=5)
 
             enwidth=20
@@ -519,7 +536,7 @@ class PyShiftsPlugin:
         group_advanc.pack(fill='both', expand=True, padx=5, pady=5)
 
         """
-        Scale options: scale or not/ offset for proton, carbon and nitrogen/ customize larmord or ramsey accuracy file
+        Scale options: scale or not/ offset for proton, carbon and nitrogen/ customize larmord or larmorca accuracy file
         """
         group_scale = group_advanc
 
@@ -694,13 +711,13 @@ class PyShiftsPlugin:
     def getLarmordCS(self):
         larmord_cs_fname = tkFileDialog.askopenfilename(title='Chemical Shift File', initialdir='', filetypes=[('all','*')], parent=self.parent)
         if larmord_cs_fname: # if nonempty
-            self.larmord_cs.set(larmord_cs_fname)
+            self.cs.set(larmord_cs_fname)
         return
 
     def getLarmordCS2(self):
         larmord_cs2_fname = tkFileDialog.askopenfilename(title='Predicted Chemical Shift File', initialdir='', filetypes=[('all','*')], parent=self.parent)
         if larmord_cs2_fname: # if nonempty
-            self.larmord_cs2.set(larmord_cs2_fname)
+            self.cs2.set(larmord_cs2_fname)
         return
 
     def disableNuclei(self):
@@ -761,43 +778,27 @@ class PyShiftsPlugin:
         Larmord_file = False
         if tag in ['Other']:
             self.get_shifts_from_larmord = False
-            self.get_shifts_from_ramsey = False
+            self.get_shifts_from_larmorca = False
             self.get_shifts_from_file = True
-            if Larmord_file:
-                # disable LARMORD relevant buttons and entry fields
-                self.larmord_bin_but.configure(state = "disabled")
-                self.larmord_para_but.configure(state = "disabled")
-                self.larmord_ref_but.configure(state = "disabled")
-                self.larmord_bin_ent.component('entry').configure(state='disabled')
-                self.larmord_para_ent.component('entry').configure(state='disabled')
-                self.larmord_ref_ent.component('entry').configure(state='disabled')
-            self.larmord_cs2_but.configure(state = "normal")
-            self.larmord_cs2_ent.component('entry').configure(state='normal')
+            self.cs2_but.configure(state = "normal")
+            self.cs2_ent.component('entry').configure(state='normal')
             self.wterror_radio.component('label').configure(state='disabled')
             for child in range(self.wterror_radio.numbuttons()):
                  self.wterror_radio.button(child).configure(state='disabled')
-        elif tag in ['Ramsey']:
+        elif tag in ['LARMORCA']:
             self.get_shifts_from_larmord = False
-            self.get_shifts_from_ramsey = True
+            self.get_shifts_from_larmorca = True
             self.get_shifts_from_file = False
-            if Larmord_file:
-                # disable LARMORD relevant buttons and entry fields
-                self.larmord_bin_but.configure(state = "disabled")
-                self.larmord_para_but.configure(state = "disabled")
-                self.larmord_ref_but.configure(state = "disabled")
-                self.larmord_bin_ent.component('entry').configure(state='disabled')
-                self.larmord_para_ent.component('entry').configure(state='disabled')
-                self.larmord_ref_ent.component('entry').configure(state='disabled')
             self.wterror_radio.component('label').configure(state='normal')
             self.larmord_acc_but.configure(state = "normal")
             self.larmord_acc_ent.component('entry').configure(state='normal')
-            self.larmord_cs2_but.configure(state = "disabled")
-            self.larmord_cs2_ent.component('entry').configure(state='disabled')
+            self.cs2_but.configure(state = "disabled")
+            self.cs2_ent.component('entry').configure(state='disabled')
             for child in range(self.wterror_radio.numbuttons()):
                  self.wterror_radio.button(child).configure(state='normal')
-        elif tag in ['Larmord']:
+        elif tag in ['LARMORD']:
             self.get_shifts_from_larmord = True
-            self.get_shifts_from_ramsey = False
+            self.get_shifts_from_larmorca = False
             self.get_shifts_from_file = False
             if Larmord_file:
                 # activate LARMORD relevant buttons and entry fields
@@ -810,27 +811,19 @@ class PyShiftsPlugin:
             self.wterror_radio.component('label').configure(state='normal')
             self.larmord_acc_but.configure(state = "normal")
             self.larmord_acc_ent.component('entry').configure(state='normal')
-            self.larmord_cs2_but.configure(state = "disabled")
-            self.larmord_cs2_ent.component('entry').configure(state='disabled')
+            self.cs2_but.configure(state = "disabled")
+            self.cs2_ent.component('entry').configure(state='disabled')
             for child in range(self.wterror_radio.numbuttons()):
                  self.wterror_radio.button(child).configure(state='normal')
         else:
             self.get_shifts_from_larmord = True
-            self.get_shifts_from_ramsey = True
+            self.get_shifts_from_larmorca = True
             self.get_shifts_from_file = False
-            if Larmord_file:
-                # activate LARMORD relevant buttons and entry fields
-                self.larmord_bin_but.configure(state = "normal")
-                self.larmord_para_but.configure(state = "normal")
-                self.larmord_ref_but.configure(state = "normal")
-                self.larmord_bin_ent.component('entry').configure(state='normal')
-                self.larmord_para_ent.component('entry').configure(state='normal')
-                self.larmord_ref_ent.component('entry').configure(state='normal')
             self.wterror_radio.component('label').configure(state='normal')
             self.larmord_acc_but.configure(state = "normal")
             self.larmord_acc_ent.component('entry').configure(state='normal')
-            self.larmord_cs2_but.configure(state = "disabled")
-            self.larmord_cs2_ent.component('entry').configure(state='disabled')
+            self.cs2_but.configure(state = "disabled")
+            self.cs2_ent.component('entry').configure(state='disabled')
             for child in range(self.wterror_radio.numbuttons()):
                  self.wterror_radio.button(child).configure(state='normal')
 
@@ -941,69 +934,128 @@ class PyShiftsPlugin:
                 self.mae["CYT:H6"] = 0.117
                 self.mae["URA:N3"] = 2.609
                 self.mae["GUA:N1"] = 1.259
-            # MAE for Ramsey
-            if not (self.get_shifts_from_larmord) and (self.get_shifts_from_ramsey):
-                self.mae["ADE:C1'"]=0.683
-                self.mae["ADE:C2"]=0.484
-                self.mae["ADE:C2'"]=0.462
-                self.mae["ADE:C3'"]=0.936
-                self.mae["ADE:C4'"]=0.636
-                self.mae["ADE:C5'"]=0.818
-                self.mae["ADE:C8"]=0.668
-                self.mae["ADE:H1'"]=0.166
-                self.mae["ADE:H2"]=0.185
-                self.mae["ADE:H2'"]=0.140
-                self.mae["ADE:H3'"]=0.107
-                self.mae["ADE:H4'"]=0.072
-                self.mae["ADE:H5'"]=0.167
-                self.mae["ADE:H5''"]=0.093
-                self.mae["ADE:H8"]=0.164
-                self.mae["CYT:C1'"]=0.561
-                self.mae["CYT:C2"]=4.780
-                self.mae["CYT:C2'"]=0.452
-                self.mae["CYT:C3'"]=0.912
-                self.mae["CYT:C4'"]=0.397
-                self.mae["CYT:C5"]=0.452
-                self.mae["CYT:C5'"]=0.690
-                self.mae["CYT:C6"]=0.540
-                self.mae["CYT:H1'"]=0.160
-                self.mae["CYT:H2'"]=0.121
-                self.mae["CYT:H3'"]=0.099
-                self.mae["CYT:H4'"]=0.083
-                self.mae["CYT:H5"]=0.128
-                self.mae["CYT:H5'"]=0.134
-                self.mae["CYT:H5''"]=0.107
-                self.mae["CYT:H6"]=0.108
-                self.mae["GUA:C1'"]=0.797
-                self.mae["GUA:C2"]=1.711
-                self.mae["GUA:C2'"]=0.604
-                self.mae["GUA:C3'"]=0.936
-                self.mae["GUA:C4'"]=0.653
-                self.mae["GUA:C5'"]=0.782
-                self.mae["GUA:C8"]=0.888
-                self.mae["GUA:H1'"]=0.189
-                self.mae["GUA:H2'"]=0.119
-                self.mae["GUA:H3'"]=0.120
-                self.mae["GUA:H4'"]=0.077
-                self.mae["GUA:H5'"]=0.125
-                self.mae["GUA:H5''"]=0.106
-                self.mae["GUA:H8"]=0.186
-                self.mae["URA:C1'"]=0.671
-                self.mae["URA:C2"]=0.952
-                self.mae["URA:C2'"]=0.420
-                self.mae["URA:C3'"]=0.946
-                self.mae["URA:C4'"]=0.670
-                self.mae["URA:C5"]=0.922
-                self.mae["URA:C5'"]=0.891
-                self.mae["URA:C6"]=0.831
-                self.mae["URA:H1'"]=0.141
-                self.mae["URA:H2'"]=0.141
-                self.mae["URA:H3'"]=0.098
-                self.mae["URA:H4'"]=0.086
-                self.mae["URA:H5"]=0.162
-                self.mae["URA:H5'"]=0.136
-                self.mae["URA:H5''"]=0.094
-                self.mae["URA:H6"]=0.118
+            # MAE for larmorca
+            if not (self.get_shifts_from_larmord) and (self.get_shifts_from_larmorca):
+                self.mae["ALA:HA"] = 0.39
+                self.mae["ARG:HA"] = 0.39
+                self.mae["ASN:HA"] = 0.39
+                self.mae["ASP:HA"] = 0.39
+                self.mae["CYS:HA"] = 0.39
+                self.mae["GLN:HA"] = 0.39
+                self.mae["GLU:HA"] = 0.39
+                self.mae["GLY:HA"] = 0.39
+                self.mae["HIS:HA"] = 0.39
+                self.mae["ILE:HA"] = 0.39
+                self.mae["LEU:HA"] = 0.39
+                self.mae["LYS:HA"] = 0.39
+                self.mae["MET:HA"] = 0.39
+                self.mae["PHE:HA"] = 0.39
+                self.mae["PRO:HA"] = 0.39
+                self.mae["SER:HA"] = 0.39
+                self.mae["THR:HA"] = 0.39
+                self.mae["TRP:HA"] = 0.39
+                self.mae["TYR:HA"] = 0.39
+                self.mae["VAL:HA"] = 0.39
+                self.mae["ALA:HN"] = 0.25
+                self.mae["ARG:HN"] = 0.25
+                self.mae["ASN:HN"] = 0.25
+                self.mae["ASP:HN"] = 0.25
+                self.mae["CYS:HN"] = 0.25
+                self.mae["GLN:HN"] = 0.25
+                self.mae["GLU:HN"] = 0.25
+                self.mae["GLY:HN"] = 0.25
+                self.mae["HIS:HN"] = 0.25
+                self.mae["ILE:HN"] = 0.25
+                self.mae["LEU:HN"] = 0.25
+                self.mae["LYS:HN"] = 0.25
+                self.mae["MET:HN"] = 0.25
+                self.mae["PHE:HN"] = 0.25
+                self.mae["PRO:HN"] = 0.25
+                self.mae["SER:HN"] = 0.25
+                self.mae["THR:HN"] = 0.25
+                self.mae["TRP:HN"] = 0.25
+                self.mae["TYR:HN"] = 0.25
+                self.mae["VAL:HN"] = 0.25
+                self.mae["ALA:CA"] = 0.9
+                self.mae["ARG:CA"] = 0.9
+                self.mae["ASN:CA"] = 0.9
+                self.mae["ASP:CA"] = 0.9
+                self.mae["CYS:CA"] = 0.9
+                self.mae["GLN:CA"] = 0.9
+                self.mae["GLU:CA"] = 0.9
+                self.mae["GLY:CA"] = 0.9
+                self.mae["HIS:CA"] = 0.9
+                self.mae["ILE:CA"] = 0.9
+                self.mae["LEU:CA"] = 0.9
+                self.mae["LYS:CA"] = 0.9
+                self.mae["MET:CA"] = 0.9
+                self.mae["PHE:CA"] = 0.9
+                self.mae["PRO:CA"] = 0.9
+                self.mae["SER:CA"] = 0.9
+                self.mae["THR:CA"] = 0.9
+                self.mae["TRP:CA"] = 0.9
+                self.mae["TYR:CA"] = 0.9
+                self.mae["VAL:CA"] = 0.9
+                self.mae["ALA:C"] = 1.03
+                self.mae["ARG:C"] = 1.03
+                self.mae["ASN:C"] = 1.03
+                self.mae["ASP:C"] = 1.03
+                self.mae["CYS:C"] = 1.03
+                self.mae["GLN:C"] = 1.03
+                self.mae["GLU:C"] = 1.03
+                self.mae["GLY:C"] = 1.03
+                self.mae["HIS:C"] = 1.03
+                self.mae["ILE:C"] = 1.03
+                self.mae["LEU:C"] = 1.03
+                self.mae["LYS:C"] = 1.03
+                self.mae["MET:C"] = 1.03
+                self.mae["PHE:C"] = 1.03
+                self.mae["PRO:C"] = 1.03
+                self.mae["SER:C"] = 1.03
+                self.mae["THR:C"] = 1.03
+                self.mae["TRP:C"] = 1.03
+                self.mae["TYR:C"] = 1.03
+                self.mae["VAL:C"] = 1.03
+                self.mae["ALA:CB"] = 1.55
+                self.mae["ARG:CB"] = 1.55
+                self.mae["ASN:CB"] = 1.55
+                self.mae["ASP:CB"] = 1.55
+                self.mae["CYS:CB"] = 1.55
+                self.mae["GLN:CB"] = 1.55
+                self.mae["GLU:CB"] = 1.55
+                self.mae["GLY:CB"] = 1.55
+                self.mae["HIS:CB"] = 1.55
+                self.mae["ILE:CB"] = 1.55
+                self.mae["LEU:CB"] = 1.55
+                self.mae["LYS:CB"] = 1.55
+                self.mae["MET:CB"] = 1.55
+                self.mae["PHE:CB"] = 1.55
+                self.mae["PRO:CB"] = 1.55
+                self.mae["SER:CB"] = 1.55
+                self.mae["THR:CB"] = 1.55
+                self.mae["TRP:CB"] = 1.55
+                self.mae["TYR:CB"] = 1.55
+                self.mae["VAL:CB"] = 1.55
+                self.mae["ALA:N"] = 2.45
+                self.mae["ARG:N"] = 2.45
+                self.mae["ASN:N"] = 2.45
+                self.mae["ASP:N"] = 2.45
+                self.mae["CYS:N"] = 2.45
+                self.mae["GLN:N"] = 2.45
+                self.mae["GLU:N"] = 2.45
+                self.mae["GLY:N"] = 2.45
+                self.mae["HIS:N"] = 2.45
+                self.mae["ILE:N"] = 2.45
+                self.mae["LEU:N"] = 2.45
+                self.mae["LYS:N"] = 2.45
+                self.mae["MET:N"] = 2.45
+                self.mae["PHE:N"] = 2.45
+                self.mae["PRO:N"] = 2.45
+                self.mae["SER:N"] = 2.45
+                self.mae["THR:N"] = 2.45
+                self.mae["TRP:N"] = 2.45
+                self.mae["TYR:N"] = 2.45
+                self.mae["VAL:N"] = 2.45
             # MAE of the combined and other mode
             # Average of the two above
             else:
@@ -1074,10 +1126,10 @@ class PyShiftsPlugin:
         # If measurd CS file not given, an error box will pop up and return false
         
         self.reset_measuredCS()
-        print('loading measured chemical shift from file...')
-        if self.check_file(self.larmord_cs.get()):
+        print('loading measured chemical shift from file: %s...'%self.cs.get())
+        if self.check_file(self.cs.get()):
             # read in from external file
-            expCS_data = pd.read_csv(self.larmord_cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
+            expCS_data = pd.read_csv(self.cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
             self.expCS_data_ext = expCS_data
             measured_resname = expCS_data['resname'].values
             measured_resid = expCS_data['resid'].values
@@ -1109,6 +1161,8 @@ class PyShiftsPlugin:
                 resname = 'GUA'
             elif resname.upper() in ['ADE','A','ADENINE','RA','RA3','RA5','RAD']:
                 resname = 'ADE'
+            elif resname.upper() in ["ALA","ARG","ASN","ASP","CYS","GLN","GLU","GLY","HIS","ILE","LEU","LYS","MET","PHE","PRO","SER","THR","TRP","TYR","VAL"]:
+                resname = resname.upper()
             else:
                 print('Error: residue name %s not found!' %resname)
             key_new = str(resid+":"+resname+":"+nucleus)
@@ -1116,7 +1170,7 @@ class PyShiftsPlugin:
                 self.measuredCS[key_new] = self.measuredCS[key]
                 del self.measuredCS[key]
 
-    def parse_larmord_output(self, larmord_tmpout_fn):
+    def parse_larmor_output(self, larmord_tmpout_fn):
         """ Parse Larmord output to self.predictedCS
             @param larmord_tmpout_fn: larmord output file
             @param type: string
@@ -1124,10 +1178,7 @@ class PyShiftsPlugin:
             @output type: a list of dictionaries. List index: state number; dictionary key: redidues (id + name + nucleus), dictionary value: predicted chemical shifts data
         """
         predCS = {}
-        predCS_type = {'names': ('resid', 'resname', 'nucleus', 'junk', 'predCS'),'formats': ('int', 'S5', 'S5', 'S5','float')}
-        #predCS_data = np.loadtxt(larmord_tmpout_fn, dtype=predCS_type)
         predCS_data = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['resid', 'resname', 'nucleus', 'junk', 'predCS'])
-        #print(predCS_data)
         larmord_resid = predCS_data['resid'].values
         larmord_resname = predCS_data['resname'].values
         larmord_nucleus = predCS_data['nucleus'].values
@@ -1242,75 +1293,41 @@ class PyShiftsPlugin:
         os.close(larmord_tmpout_os_fh)
         return pdb_fn, larmord_tmpout_fn
 
-    def combined_analysis_one_state(self, sel_name, objname):
-        """
-        For one state, compute chemical shifts for combined (using the average of Larmord and Ramsey) analysis
-        Called in runAnalysisOneState and only executed when in 'Combined' mode
-        """
-        # Get Larmord data from predictor and save to dictionary larmord_predCS
-        pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
-        larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
-        os.system(larmord_cmd)
-        larmord_predCS = self.parse_larmord_output(larmord_tmpout_fn)
-        # Get Ramsey data from predictor and save to dictionary ramsey_predCS
-        pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Ramsey',sel_name, objname)
-        temp_file_os_fh, temp_file_fn = tempfile.mkstemp(suffix='.txt')
-        os.close(temp_file_os_fh)
-        larmord_cmd = "curl --fail --silent -X POST -F pdb=@%s http://50.63.157.7/RAMSEYWebService/upload/  | sed 's/<.*>//g' | awk -v model=%s -v id=%s '{print model, $0, id}' > %s" % (pdb_fn, cmd.get_state(), objname, temp_file_fn)
-        ramsey_format_cmd = "awk '{if($5>0) print $4, $2, $5, $1, $6}' %s > %s" %(temp_file_fn, larmord_tmpout_fn)
-        os.system(larmord_cmd)
-        os.system(ramsey_format_cmd)
-        ramsey_predCS = self.parse_larmord_output(larmord_tmpout_fn)
-        # Find common keys in larmord_predCS and ramsey_predCS and compute average values to save to the global dictionary
-        averageCS = {}
-        key_list = sorted(list(set(larmord_predCS.keys()+ramsey_predCS.keys())))
-        for key in key_list:
-            try:
-                larmordCS = larmord_predCS[key]
-            except:
-                continue
-            try:
-                ramseyCS = ramsey_predCS[key]
-            except:
-                continue
-            averageCS[key] = (larmordCS+ramseyCS)/2
-        self.predictedCS.append(averageCS.copy())
 
     def runAnalysisOneState(self, sel_name, objname):
         """
-        For one state, compute chemical shift using Larmord or Ramsey or load cs from file.
-        Save the outcome (predited CS) in file: larmord_tmpout_fn, and call parse_larmord_output function to save all data in self.predictedCS.
+        For one state, compute chemical shift using Larmord or larmorca or load cs from file.
+        Save the outcome (predited CS) in file: larmord_tmpout_fn, and call parse_larmor_output function to save all data in self.predictedCS.
         @param selname: selection name
         @param objname: state number
         @param type: string, int
         """
-        if (self.get_shifts_from_larmord and self.get_shifts_from_ramsey):
-            self.combined_analysis_one_state(sel_name, objname)
+        if (self.get_shifts_from_larmord):
+            pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('LARMORD', sel_name, objname)
+            larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
+            self.predCS_data_ext = larmord_tmpout_fn
+            os.system(larmord_cmd)
+        if (self.get_shifts_from_larmorca):
+            pdb_fn, lamorca_tmpout_fn = self.prepare_file_for_analysis('LARMORCA', sel_name, objname)
+            # ['resid', 'resname', 'nucleus', 'junk', 'predCS']
+            # 1 164 N LEU 121.8 121.581 0 ID
+            lamorca_cmd = '%s/larmorca %s | awk \'{print $2, $4, $3, $5, $6}\' > %s' % (self.larmorca_bin.get(), pdb_fn, lamorca_tmpout_fn)
+            self.predCS_data_ext = lamorca_tmpout_fn
+            os.system(lamorca_cmd)
+        # Here call function self.parse_larmor_output and save predicted CS data to a global dictionary self.predCS
+        if self.get_shifts_from_larmord:
+            predCS = self.parse_larmor_output(larmord_tmpout_fn)
+            self.predictedCS.append(predCS.copy())
+        if self.get_shifts_from_larmorca:
+            predCS = self.parse_larmor_output(lamorca_tmpout_fn)
+            self.predictedCS.append(predCS.copy())
         else:
-            if (self.get_shifts_from_larmord):
-                pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Larmord', sel_name, objname)
-                larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s %s | awk \'{print $3, $4, $5, $7, $6}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), pdb_fn, larmord_tmpout_fn)
-                self.predCS_data_ext = larmord_tmpout_fn
-                os.system(larmord_cmd)
-            if (self.get_shifts_from_ramsey):
-                pdb_fn, larmord_tmpout_fn = self.prepare_file_for_analysis('Ramsey', sel_name, objname)
-                temp_file_os_fh, temp_file_fn = tempfile.mkstemp(suffix='.txt')
-                os.close(temp_file_os_fh)
-                larmord_cmd = "curl --fail --silent -X POST -F pdb=@%s http://50.63.157.7/RAMSEYWebService/upload/  | sed 's/<.*>//g' | awk -v model=%s -v id=%s '{print model, $0, id}' > %s" % (pdb_fn, cmd.get_state(), objname, temp_file_fn)
-                ramsey_format_cmd = "awk '{if($5>0) print $4, $2, $5, $1, $6}' %s > %s" %(temp_file_fn, larmord_tmpout_fn)
-                os.system(larmord_cmd)
-                os.system(ramsey_format_cmd)
-            # Here call function self.parse_larmord_output and save predicted CS data to a global dictionary self.predCS
-            if self.get_shifts_from_larmord:
-                predCS = self.parse_larmord_output(larmord_tmpout_fn)
+            if self.check_file(self.cs2.get()):
+                predCS = self.parse_larmord_dataframe(data_ext = self.predCS_data_ext, state = cmd.get_state())
                 self.predictedCS.append(predCS.copy())
             else:
-                if self.check_file(self.larmord_cs2.get()):
-                    predCS = self.parse_larmord_dataframe(data_ext = self.predCS_data_ext, state = cmd.get_state())
-                    self.predictedCS.append(predCS.copy())
-                else:
-                    self.print_file_error(self.larmord_cs2.get())
-                    return False
+                self.print_file_error(self.cs2.get())
+                return False
         return True
 
     ## Functions related to self.runCompare()
@@ -1342,6 +1359,7 @@ class PyShiftsPlugin:
             return False
         for k in range(len(x)):
             mse = mse + (x[k]-y[k])*(x[k]-y[k])/(mae[k]*mae[k])
+            #print(mse, x[k], y[k], mae[k])
         try:
             rmse = np.sqrt(mse/N)
         except:
@@ -1433,6 +1451,7 @@ class PyShiftsPlugin:
                 mae = self.mae[k2]
             except:
                 mae = 1.0
+                print(k2)
 
             # try to get measured chemical shifts for each predicted value
             try:
@@ -1630,7 +1649,7 @@ class PyShiftsPlugin:
         self.disableAll()
         
         # reset
-        self.get_shifts_from_file_larmord = False
+        self.get_shifts_from_file_larmor = False
 
         # reset predicted and measured chemical shifts(if ever loaded) before running analysis
         self.reset_predictedCS()
@@ -1652,7 +1671,7 @@ class PyShiftsPlugin:
             if not self.get_shifts_from_file:
                 #if number of states is greater than 1
                 if self.PSICO and cmd.count_states(objname) > 1:
-                    self.get_shifts_from_file_larmord = True
+                    self.get_shifts_from_file_larmor = True
                     
                     pdb_fn = None
                     pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
@@ -1668,21 +1687,26 @@ class PyShiftsPlugin:
     
                     psico.exporting.save_traj(filename = dcd_fn, selection = objname)
                     cmd.save(filename = pdb_fn, selection = objname, state = 1)
-                    larmord_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
-                    #print(larmord_cmd)
-                    os.system(larmord_cmd)
-                    self.larmord_cs2_internal = larmord_tmpout_fn
+                    
+                    if self.get_shifts_from_larmord:
+                        larmor_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                    if self.get_shifts_from_larmorca:
+                        larmor_cmd = '%s/larmorca  -trj %s %s | awk \'{print $1, $2, $4, $3, $6, $8}\' > %s' % (self.larmorca_bin.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
+                    print(larmor_cmd)
+                    os.system(larmor_cmd)
+                    self.cs2_internal = larmord_tmpout_fn
                     self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                     #print(self.predCS_data_ext.shape)
             # load external file
             if self.get_shifts_from_file:
-                self.predCS_data_ext = pd.read_csv(self.larmord_cs2.get(), sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                self.predCS_data_ext = pd.read_csv(self.cs2.get(), sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                 print("from external file")
-            if self.get_shifts_from_file_larmord:
-                self.predCS_data_ext = pd.read_csv(self.larmord_cs2_internal, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+            if self.get_shifts_from_file_larmor:
+                self.predCS_data_ext = pd.read_csv(self.cs2_internal, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                 print("from internal file")
-            if self.get_shifts_from_file or self.get_shifts_from_file_larmord: 
+            if self.get_shifts_from_file or self.get_shifts_from_file_larmor: 
                 self.get_shifts_from_larmord = False
+                self.get_shifts_from_larmorca = False
                 # check for mismatch between  number of states in external file and number states in pymol object
                 if self.check_states_mismatch():
                     self.print_mismatch_error()
@@ -2293,7 +2317,7 @@ class PyShiftsPlugin:
             return False
 
     def print_mismatch_error(self):
-        err_msg = 'Mismatch # states in %s !=  # states in %s.' %(self.larmord_cs2.get(), self.pymol_sel.get())
+        err_msg = 'Mismatch # states in %s !=  # states in %s.' %(self.cs2.get(), self.pymol_sel.get())
         print('ERROR: %s' % (err_msg,))
         tkMessageBox.showinfo(title='ERROR', message=err_msg)
         
