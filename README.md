@@ -1,7 +1,7 @@
 
 # Pyshifts
-PyShifts: a PyMOL plugin to visualize chemical shift differences
- 
+Pyshifts: A Pymol Plugin to Chemical Shift-Based Analysis of Biomolecular Ensembles
+
 ## Installation
 Pyshifts is a plugin in PyMOL. Tested on Pymol >= v2.0 and Python3. Should work with Pymol < v2.0.
 
