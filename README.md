@@ -27,14 +27,14 @@ You can obtain PYMOL [here](https://pymol.org/2/).
         export LARMORD_BIN=/Software/LarmorD/bin
         export PATH="${LARMORD_BIN}:$PATH"
 
-#### 4. Get LarmorCα package (for computing protein backbone chemical shifts)
+#### 5. Get LarmorCα package (for computing protein backbone chemical shifts)
 - LarmorCα can be obtained [here](https://github.com/atfrank/LARMORCA) and it is free of charge if not for commercial use. 
 - You also have to set `LARMORCA_BIN` path in your environment. For example:
 
         export LARMORCA_BIN=/Software/LARMORCA/bin
         export PATH="${LARMORCA_BIN}:$PATH"
 
-#### 5. Get BME package
+#### 6. Get BME package
 - Install [this](https://github.com/KULL-Centre/BME) Bayesian Maximum Entropy (BME) library.
 - Remember to add the library to your PYTHONPATH. For example:
 
@@ -42,8 +42,8 @@ You can obtain PYMOL [here](https://pymol.org/2/).
         export PYTHONPATH="${BME}:$PYTHONPATH"
 
 
-#### 6. Get Psico library
-- [optional] Install the [Pymol ScrIpt COllection (PSICO)](https://github.com/speleo3/pymol-psico). Improves performance of PyShifts when computing chemical shifts using LARMORD.
+#### 7. Get Psico library
+- Install the [Pymol ScrIpt COllection (PSICO)](https://github.com/speleo3/pymol-psico). Improves performance of PyShifts when computing chemical shifts using LARMORD.
 - Remember to add the library to your PYTHONPATH. For example:
 
         export PSICO=/home/XXX/GitHub/pymol-psico/
