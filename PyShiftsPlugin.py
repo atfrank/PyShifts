@@ -339,9 +339,9 @@ class PyShiftsPlugin:
         self.error_table = Listbox(group_table,
             font = fixedFont,
             selectmode = BROWSE,
-            width = 55,
-            height = 13,
-            bd = 4,
+            width = 60,
+            height = 10,
+            bd = 6,
             relief='ridge',
         )
         self.error_table.pack(fill = BOTH, expand = 1)
@@ -369,21 +369,20 @@ class PyShiftsPlugin:
         self.CS_table = Listbox(group_CStable,
             font = fixedFont,
             selectmode = BROWSE,
-            width = 52,
-            height = 13,
-            bd = 5,
+            width = 60,
+            height = 10,
+            bd = 6,
             relief='ridge',
-            yscrollcommand=cs_scrollbar.set
         )
-        cs_scrollbar.config(command=self.CS_table.yview)
-        cs_scrollbar.pack(side=RIGHT, fill=Y, )
+        #cs_scrollbar.config(command=self.CS_table.yview)
+        #cs_scrollbar.pack(side=RIGHT, fill=Y, )
         self.CS_table.pack(side=LEFT, fill = BOTH, expand = 1)
         self.CS_table.bind("<Double-Button-1>", self.seleRes)
         # Create the table header
         self.CS_table.insert(1, 'Chemical Shift Table'.center(55))
         self.CStable_header = 'resname resid nuclei expCS predCS weighted_error'
         self.CStable_header = string.split(self.CStable_header)
-
+        
         # Create row headers
         headerLine = ' '
         for column in range(len(self.CStable_header)):
@@ -468,17 +467,28 @@ class PyShiftsPlugin:
         self.larmord_error_metric = 'MAE'
 
         # Arrange widgets using grid
-        padx=5
-        pady=5
+        padx=1
+        pady=1
         #self.topheader.grid(row=0)
-        self.error_table.grid(sticky=W, row=1, column=0, rowspan = 15, columnspan = 30, padx=padx, pady=pady)
-        group_CStable.grid(sticky=W, row=1, column=40, rowspan = 15, columnspan = 50, padx=padx, pady=pady)
-        self.save_CStable.grid(sticky=W, row=16, column=0, rowspan = 1, columnspan = 60, padx=padx, pady=pady)
-        self.sort_CStable.grid(sticky=W, row=16, column=60, rowspan = 1, columnspan = 30, padx=padx, pady=pady)
-        self.cs_ent.grid(sticky='we', row=17, column=0, columnspan=4, pady=pady, padx=padx)
-        self.cs_but.grid(sticky='we', row=17, column=4,  pady=pady, padx=padx)
-        self.sortby_nucleus.grid(sticky='we', row=18, column=0, columnspan = 50, pady=pady)
-        self.sortby_metric.grid(sticky='we', row=18, column=50, columnspan = 30, pady=pady)
+        #self.error_table.grid(sticky=W, row=1, column=0, rowspan = 15, columnspan = 30, padx=padx, pady=pady)
+        #group_CStable.grid(sticky=W, row=1, column=40, rowspan = 15, columnspan = 50, padx=padx, pady=pady)
+        #self.save_CStable.grid(sticky=W, row=16, column=0, rowspan = 1, columnspan = 60, padx=padx, pady=pady)
+        #self.sort_CStable.grid(sticky=W, row=16, column=60, rowspan = 1, columnspan = 30, padx=padx, pady=pady)
+        #self.cs_ent.grid(sticky='we', row=17, column=0, columnspan=4, pady=pady, padx=padx)
+        #self.cs_but.grid(sticky='we', row=17, column=4,  pady=pady, padx=padx)
+        #self.sortby_nucleus.grid(sticky='we', row=18, column=0, columnspan = 50, pady=pady)
+        #self.sortby_metric.grid(sticky='we', row=18, column=50, columnspan = 30, pady=pady)
+
+
+        self.error_table.grid(sticky=W, row=1, column=0, rowspan = 5, columnspan = 30, padx=padx, pady=pady)
+        group_CStable.grid(sticky=W, row=6, column=0, rowspan = 5, columnspan = 50, padx=padx, pady=pady)
+        self.save_CStable.grid(sticky=W, row=11, column=0, rowspan = 1, columnspan = 60, padx=padx, pady=pady)
+        self.sort_CStable.grid(sticky=W, row=12, column=0, rowspan = 1, columnspan = 30, padx=padx, pady=pady)
+        self.cs_ent.grid(sticky='we', row=13, column=0, columnspan=4, pady=pady, padx=padx)
+        self.cs_but.grid(sticky='we', row=13, column=4,  pady=pady, padx=padx)
+        self.sortby_nucleus.grid(sticky='we', row=14, column=0, columnspan = 50, pady=pady)
+        self.sortby_metric.grid(sticky='we', row=15, column=0, columnspan = 30, pady=pady)
+
 
         group_table.columnconfigure(0, weight=1)
         group_table.columnconfigure(50, weight=1)
@@ -752,6 +762,9 @@ class PyShiftsPlugin:
         if tag in ['RMSE']:
             self.enableNuclei()
             self.larmord_error_metric = 'RMSE'
+        if tag in ['PYM']:
+            self.enableNuclei()
+            self.larmord_error_metric = 'PYM'
         if tag in ['state']:
             self.larmord_error_metric = 'state'
             self.disableNuclei()
@@ -1366,16 +1379,31 @@ class PyShiftsPlugin:
             return 0
         return rmse
 
+    def confidence(self,x, y, mae):
+        # Calculate the confidence PYM
+        # see: A Bayesian approach to NMR crystal structure determination (10.1039/C9CP04489B)
+        prob = 1.0 
+        N = len(x)
+        if len(x)!=len(y) or len(x)!=len(mae):
+            return False
+        for k in range(len(x)):
+            error = (x[k]-y[k])/mae[k]
+            prefactor =  (1/np.sqrt(2*np.pi*mae[k]*mae[k]))
+            prob_k =  prefactor * np.exp(-0.5*error*error)
+            prob = prob*prob_k
+        print("My confidence is: %s"%prob)
+        return prob
+
     def getMAE(self, error, nOfAtoms):
-    	'''
-    	error: total error
-    	nOfAtoms: total number of atoms
-    	'''
-    	try:
-    		mae = error/nOfAtoms
-    	except:
-    		return 0.0
-    	return mae
+      '''
+      error: total error
+      nOfAtoms: total number of atoms
+      '''
+      try:
+        mae = error/nOfAtoms
+      except:
+        return 0.0
+      return mae
 
     def computePearson(self, nucleus, output_nucleus, nnucleus, state_number):
         # Compute Pearson coefficients between exp. and pred. data
@@ -1513,24 +1541,34 @@ class PyShiftsPlugin:
         self.Pearson_coef.append(pearson)
         RMSE = self.root_mean_square_error(list_predCS, list_expCS, list_mae)
         self.RMSE_coef.append(RMSE)
+        
+        PYM = self.confidence(list_predCS, list_expCS, list_mae)
+        self.PYM_coef.append(PYM)
 
         # carbon shifts
         pearson = self.computePearson('carbon', output_carbon, ncarbons, state_number)
         self.Pearson_carbon.append(pearson)
         RMSE = self.root_mean_square_error(list_predCS_carbon, list_expCS_carbon, list_mae_carbon)
         self.RMSE_carbon.append(RMSE)
+        PYM = self.confidence(list_predCS_carbon, list_expCS_carbon, list_mae_carbon)
+        self.PYM_carbon.append(PYM)
 
         # proton shifts
         pearson = self.computePearson('proton', output_proton, nprotons, state_number)
         self.Pearson_proton.append(pearson)
         RMSE = self.root_mean_square_error(list_predCS_proton, list_expCS_proton, list_mae_proton)
         self.RMSE_proton.append(RMSE)
+        PYM = self.confidence(list_predCS_proton, list_expCS_proton, list_mae_proton)
+        self.PYM_proton.append(PYM)
 
         # nitrogen shifts
         pearson = self.computePearson('nitrogen', output_nitrogen, nnitrogens, state_number)
         self.Pearson_nitrogen.append(pearson)
         RMSE = self.root_mean_square_error(list_predCS_nitrogen, list_expCS_nitrogen, list_mae_nitrogen)
         self.RMSE_nitrogen.append(RMSE)
+        PYM = self.confidence(list_predCS_nitrogen, list_expCS_nitrogen, list_mae_nitrogen)
+        self.PYM_nitrogen.append(PYM)
+
 
         print('Complete calculating error for state %d' %state_number)
         return self.getMAE(total_error, ntotal), self.getMAE(carbon_error, ncarbons), self.getMAE(proton_error, nprotons), self.getMAE(nitrogen_error, nnitrogens), output_total, output_carbon, output_proton, output_nitrogen
@@ -1749,21 +1787,25 @@ class PyShiftsPlugin:
         self.Kendall_coef = [0]
         self.Spearman_coef = [0]
         self.RMSE_coef = [0]
+        self.PYM_coef = [0]
 
         self.Pearson_carbon = [0]
         self.Kendall_carbon = [0]
         self.Spearman_carbon = [0]
         self.RMSE_carbon = [0]
+        self.PYM_carbon = [0]
 
         self.Pearson_proton = [0]
         self.Kendall_proton = [0]
         self.Spearman_proton = [0]
         self.RMSE_proton = [0]
+        self.PYM_proton = [0]
 
         self.Pearson_nitrogen = [0]
         self.Kendall_nitrogen = [0]
         self.Spearman_nitrogen = [0]
         self.RMSE_nitrogen = [0]
+        self.PYM_nitrogen = [0]
 
         self.load_measuredCS()
         self.conv_resname_format()
@@ -1856,7 +1898,7 @@ class PyShiftsPlugin:
     def printError(self, orderList):
         """
         Print MAE and correlation coefficients between predicted and measured CS for each state in the following format:
-        state || MAE || P coef || RMSE
+        state || MAE || P coef || RMSE || PYM
         print error and coefs row by row in chosen order given by orderList
         @param orderList: control the order that the table to be printed in
         @param type: list
@@ -2011,6 +2053,8 @@ class PyShiftsPlugin:
             self.sort_Spearman_coef()
         if metric in ['RMSE']:
             self.sort_RMSE_coef()
+        if metric in ['PYM']:
+            self.sort_PYM_coef()
         if metric in ['state']:
             self.sort_state_number()
         if metric in ['weight']:
@@ -2076,6 +2120,18 @@ class PyShiftsPlugin:
             self.best_model_indices = np.argsort(self.RMSE_nitrogen)[1:]
         if nucleus == 'all':
             self.best_model_indices = np.argsort(self.RMSE_coef)[1:]
+        return True
+
+    def sort_PYM_coef(self):
+        nucleus = self.larmord_error_sel
+        if nucleus == 'proton':
+            self.best_model_indices = np.argsort(self.PYM_proton)[1:]
+        if nucleus == 'carbon':
+            self.best_model_indices = np.argsort(self.PYM_carbon)[1:]
+        if nucleus == 'nitrogen':
+            self.best_model_indices = np.argsort(self.PYM_nitrogen)[1:]
+        if nucleus == 'all':
+            self.best_model_indices = np.argsort(self.PYM_coef)[1:]
         return True
 
     ## Methods and callback functions related to chemical shifts table
