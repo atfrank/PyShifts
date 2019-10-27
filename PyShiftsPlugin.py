@@ -856,7 +856,7 @@ class PyShiftsPlugin:
             if self.check_file(self.larmord_acc.get()):
                 mae_type = {'names': ('resname', 'nucleus','MAE'),'formats': ('S5','S5','float')}
                 #data = np.loadtxt(self.larmord_acc.get(), dtype=mae_type)
-                data = pd.read_csv(self.larmord_acc.get(), sep = " ", names = ['resname', 'nucleus','MAE'])
+                data = pd.read_csv(self.larmord_acc.get(), sep = '\s+', names = ['resname', 'nucleus','MAE'])
                 self.larmord_acc_ext = data
                 larmord_resname = data['resname'].values
                 larmord_nucleus = data['nucleus'].values
@@ -1129,7 +1129,7 @@ class PyShiftsPlugin:
         print('loading measured chemical shift from file: %s...'%self.cs.get())
         if self.check_file(self.cs.get()):
             # read in from external file
-            expCS_data = pd.read_csv(self.cs.get(), sep = " ", names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
+            expCS_data = pd.read_csv(self.cs.get(), sep = '\s+', names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
             self.expCS_data_ext = expCS_data
             measured_resname = expCS_data['resname'].values
             measured_resid = expCS_data['resid'].values
@@ -1178,7 +1178,7 @@ class PyShiftsPlugin:
             @output type: a list of dictionaries. List index: state number; dictionary key: redidues (id + name + nucleus), dictionary value: predicted chemical shifts data
         """
         predCS = {}
-        predCS_data = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['resid', 'resname', 'nucleus', 'junk', 'predCS'])
+        predCS_data = pd.read_csv(larmord_tmpout_fn, sep = '\s+', names = ['resid', 'resname', 'nucleus', 'junk', 'predCS'])
         larmord_resid = predCS_data['resid'].values
         larmord_resname = predCS_data['resname'].values
         larmord_nucleus = predCS_data['nucleus'].values
@@ -1695,14 +1695,14 @@ class PyShiftsPlugin:
                     print(larmor_cmd)
                     os.system(larmor_cmd)
                     self.cs2_internal = larmord_tmpout_fn
-                    self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                    self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = '\s+', names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                     #print(self.predCS_data_ext.shape)
             # load external file
             if self.get_shifts_from_file:
-                self.predCS_data_ext = pd.read_csv(self.cs2.get(), sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                self.predCS_data_ext = pd.read_csv(self.cs2.get(), sep = '\s+', names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                 print("from external file")
             if self.get_shifts_from_file_larmor:
-                self.predCS_data_ext = pd.read_csv(self.cs2_internal, sep = " ", names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
+                self.predCS_data_ext = pd.read_csv(self.cs2_internal, sep = '\s+', names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                 print("from internal file")
             if self.get_shifts_from_file or self.get_shifts_from_file_larmor: 
                 self.get_shifts_from_larmord = False
