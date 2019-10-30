@@ -247,8 +247,8 @@ class PyShiftsPlugin:
         ######################
         ## Tab : Options Tab
         ######################
-        page = self.notebook.add('Options')
-        self.notebook.tab('Options').focus_set()
+        page = self.notebook.add('Compute or Load Shifts')
+        self.notebook.tab('Compute or Load Shifts').focus_set()
         group_struc = tkinter.LabelFrame(page, text = 'Setup')
         group_struc.pack(fill='both', expand=True, padx=25, pady=25)
         self.analyzeButton = Pmw.ButtonBox(page,
@@ -257,7 +257,7 @@ class PyShiftsPlugin:
                             frame_borderwidth = 2,
                             frame_relief = 'groove',
                             )
-        self.analyzeButton.add('Predict or Load Chemical Shifts', command = self.runAnalysis)
+        self.analyzeButton.add('Run', command = self.runAnalysis)
         #self.analyzeButton.pack(fill='both', expand=True, padx=25, pady=25)
         self.analyzeButton.button(0).grid(sticky=N, row=0)
         group_struc.grid(row = 0, column = 0)
@@ -1672,7 +1672,7 @@ class PyShiftsPlugin:
     ## Primary buttons ('Predict or Load Chemical Shifts', 'Compare', 'Sort') callback functions
     def runAnalysis(self):
         """
-        Callback function for 'Predict or Load Chemical Shifts' button in 'Options' tab
+        Callback function for 'Run' button in 'Compute or Load Shifts' tab
         Run larmord over all states within one object
         Call self.runAnalysisOneState in each loop and loop over all states
         """
@@ -2437,7 +2437,7 @@ class PyShiftsPlugin:
         """
         if butcmd == 'OK':
             print('is everything OK?')
-        elif butcmd == 'Predict or Load Chemical Shifts':
+        elif butcmd == 'Run':
             rtn = self.runAnalysis()
             if rtn and VERBOSE:
                  print('Done with Larmord!')
