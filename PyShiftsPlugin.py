@@ -396,7 +396,7 @@ class PyShiftsPlugin:
                         frame_borderwidth = 2,
                         frame_relief = 'groove',
                 )
-        self.balloon.bind(self.sort_CStable, 'Sort by residue id or scaled absolute error(in ascending order)')
+        self.balloon.bind(self.sort_CStable, 'Sort by residue id or scaled absolute error (in ascending order)')
         self.sort_CStable.add('resid', command = self.showCStable)
         self.sort_CStable.add('error', command = self.sort_CStable_error)
         # initialize buttons as disabled
@@ -424,7 +424,7 @@ class PyShiftsPlugin:
                                       label_text='Chemical Shift File:', labelpos='wn',
                                       entry_textvariable=self.cs,
                                       entry_width=10)
-        self.balloon.bind(self.cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or larmorca or reference chemical shifts supplied by the user.      \n[Format:residue_number, residue_name, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
+        self.balloon.bind(self.cs_ent, 'This file should contain the reference chemical shifts that will be \ncompared to the chemical shifts computed from the structure(s) using LARMORD or larmorca or reference chemical shifts supplied by the user.      \n[Format:residue_name, residue_number, nucleus_name, CS_value_1, CS_values_2]                                         \nresidue_number - residue number for a given chemical shift (should match the number in the load structure file)                                           \nresidue_name - residue name for a given chemical shift (should match the name in the load structure file)                                          \nnucleus_name - nucleus name for a given chemical shift (should match the name in the load structure file)                                          \nCS_values_1 - reference (measured) chemical shifts                                       \nCS_values_2 - can be any value since it is ignored in this part')
         self.cs_but = tkinter.Button(group_table, text = 'Browse...', command = self.getLarmordCS)
 
 
