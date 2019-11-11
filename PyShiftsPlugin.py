@@ -194,9 +194,9 @@ class PyShiftsPlugin:
         if 'LARMORD_BIN' in os.environ:
             if VERBOSE: print('Found LARMORD_BIN in environmental variables', os.environ['LARMORD_BIN'])
             self.larmord_bin.set(os.environ['LARMORD_BIN'])
-            self.cs.set("/Users/afrankz/Documents/GitHub/PyShifts/test/protein_cs.dat")#for test use only
-            self.cs2.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/shifts.txt")#for test use only
-            self.pymol_sel.set("my_protein")#for test use only
+            #self.cs.set("/Users/afrankz/Documents/GitHub/PyShifts/test/protein_cs.dat")#for test use only
+            #self.cs2.set("/Users/afrankz/Documents/GitHub/RNATransientStates/FluorideRibo/data/shifts.txt") #for test use only
+            #self.pymol_sel.set("my_protein")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
             self.larmord_ref.set(os.environ['LARMORD_BIN']+"/../data/larmorD_reference_shifts_rna.dat")
             
@@ -220,7 +220,7 @@ class PyShiftsPlugin:
             self.larmorca_bin.set(os.environ['LARMORCA_BIN'])
         else:
             if VERBOSE: print('LARMORCA_BIN not found in environmental variables.')
-            self.larmord_bin.set('')
+            self.larmorca_bin.set('')
         
         # tooltips
         self.balloon = Pmw.Balloon(self.parent)
@@ -1733,6 +1733,7 @@ class PyShiftsPlugin:
                     print(larmor_cmd)
                     os.system(larmor_cmd)
                     self.cs2_internal = larmord_tmpout_fn
+                    self.cs2.set(larmord_tmpout_fn)
                     self.predCS_data_ext = pd.read_csv(larmord_tmpout_fn, sep = '\s+', names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                     #print(self.predCS_data_ext.shape)
             # load external file
@@ -1860,17 +1861,18 @@ class PyShiftsPlugin:
         # setup files for clustering and weighting
         
         # finalize outlier key
+        RUN_BME_ = self.BME and cmd.count_states(self.pymol_sel.get()) > 1 and self.check_file(self.cs.get())
         self.outlier_keys = list(set(self.outlier_keys))
         if self.SKLEARN and cmd.count_states(self.pymol_sel.get()) > 1:
             self.prepare_for_clustering()
-        if self.BME and cmd.count_states(self.pymol_sel.get()) > 1:
+        if RUN_BME_:
             self.prepare_bme_files()
         if self.SKLEARN  and cmd.count_states(self.pymol_sel.get()) > 1:
             self.clusters = self.run_clustering()
             print("SHOULD BE ABLE TO RUN SKLEARN: %s"%self.clusters)
         else:
             self.clusters = self.null_clusters
-        if self.BME and cmd.count_states(self.pymol_sel.get()) > 1:
+        if RUN_BME_:
             theta = self.runBME()
             print(self.w_opt)
             print("BME %s %s %s"%(len(self.w_opt), np.sum(self.w_opt), theta))
