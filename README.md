@@ -50,7 +50,7 @@ Run Pyshifts through `Plugin` -> `Legacy Plugins` ->   `Pyshifts`.
 ## Advanced Options
 
 ### Perform BME Calculation
-BME: a Bayesian Maximum Entropy (BME) library. For more detail please refer to the manuscript.
+BME: a Bayesian Maximum Entropy (BME) library. For more detail please refer to the manuscript, section `Assigning Conformational Weights`.
 
 #### Installation
 ```
@@ -61,7 +61,7 @@ echo "export PYTHONPATH=\$BME:\$PATH" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Once `BME` is installed, `Pyshifts` will be able to perform BME analysis and results will be shown in `Error table` ( `BME` column in `Error table` will be all `1.0` if `BME` not installed).
+Once `BME` is installed, `Pyshifts` will be able to perform BME analysis and results will be shown in `Error table` (`BME` column in `Error table` will all be `1.0` if `BME` not installed).
 
 ### Pyshifts Parameter Tuning
 
@@ -71,9 +71,14 @@ The third tab `Advanced Options` contains functionality for parameter tuning. Th
 
 
 ## Publications
+
+* `Pyshifts`(In submission) : Jingru Xie, Kexin Zhang and Aaron T. Frank. "Pyshifts: A PyMOL Plugin for Chemical Shift-Based Analysis of Biomolecular Ensembles".
+
 * `LarmorD`: Frank, Aaron T., Sean M. Law, and Charles L. Brooks III. "A simple and fast approach for predicting 1H and 13C chemical shifts: toward chemical shift-guided simulations of RNA." The Journal of Physical Chemistry B 118.42 (2014): 12168-12175.
 
 * `LarmorCa`: Frank, Aaron T., et al. "Predicting Protein Backbone Chemical Shifts From Cα Coordinates: Extracting High Resolution Experimental Observables from Low Resolution Models." Journal of chemical theory and computation 11.1 (2014): 325-331.
+
+
 
 
 ## Copyright Notice
