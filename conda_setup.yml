@@ -1,0 +1,6 @@
+channels:
+  - anaconda
+  - schrodinger
+  - defaults
+dependencies:
+
