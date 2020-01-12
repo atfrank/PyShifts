@@ -66,14 +66,14 @@ try:
     from pymol import stored
     from pymol import cmd
 except ImportError:
-    print('Warning: pymol library cmd not found.')
+    print('ERROR: pymol library cmd not found.')
     sys.exit(1)
 
 # external libraries
 try:
     import Pmw
 except ImportError:
-    print('Warning: failed to import Pmw. Exit ...')
+    print('ERROR: failed to import Pmw. Exit ...')
     sys.exit(1)
 
 try:
@@ -83,7 +83,7 @@ try:
     SKLEARN = True
 except:
     SKLEARN = False
-    print("Couldn't find sklearn")
+    print("Warning: Couldn't find sklearn")
 
 # try loading optionally libraries
 try:
@@ -91,14 +91,14 @@ try:
     PSICO = True
 except:
     PSICO = False
-    print("Couldn't find psico")
+    print("Warning: Couldn't find psico")
 
 try:
     import bme_reweight as bme
     BME = True
 except:
     BME = False
-    print("Couldn't find BME")
+    print("Warning: Couldn't find BME")
 
 VERBOSE = False
 
@@ -160,7 +160,7 @@ class PyShiftsPlugin:
         self.BME = BME
         self.PSICO = PSICO
         self.SKLEARN = SKLEARN
-        
+
         # Initialize some variables
         # Define different types of nucleus of interest
         self.proton_list = ["H1","H3","H1'", "H2'", "H3'", "H4'", "H5'",  "H5''", "H2", "H5", "H6", "H8", "H" "HN", "HA"]
@@ -168,15 +168,15 @@ class PyShiftsPlugin:
         self.nitrogen_list = ["N1", "N3", "N"]
 
         self.total_list = self.proton_list + self.carbon_list + self.nitrogen_list
-        
+
         self.ndisplayed = 10
-        if self.ndisplayed > cmd.count_states(self.pymol_sel.get()): 
+        if self.ndisplayed > cmd.count_states(self.pymol_sel.get()):
             self.ndisplayed = cmd.count_states(self.pymol_sel.get())
-        
+
         self.min_size.set(2)
-        if self.min_size.get() > cmd.count_states(self.pymol_sel.get()): 
+        if self.min_size.get() > cmd.count_states(self.pymol_sel.get()):
             self.min_size.set(cmd.count_states(self.pymol_sel.get()))
-        
+
         self.sel_obj_list = []
         # there may be more than one seletion or object defined by self.pymol_sel
         # treat each selection and object separately
@@ -199,12 +199,18 @@ class PyShiftsPlugin:
             #self.pymol_sel.set("my_protein")#for test use only
             self.larmord_para.set(os.environ['LARMORD_BIN']+"/../data/larmorD_alphas_betas_rna.dat")
             self.larmord_ref.set(os.environ['LARMORD_BIN']+"/../data/larmorD_reference_shifts_rna.dat")
-            
-            self.larmord_acc.set(os.environ['LARMORD_BIN']+"/../data/testAccuracy.dat")
+
         else:
             if VERBOSE: print('LARMORD_BIN not found in environmental variables.')
             self.larmord_bin.set('')
-        
+
+        if 'PYSHIFTS_PATH' in os.environ:
+            self.larmord_acc.set(os.environ['PYSHIFTS_PATH']+"/test/testAccuracy.dat")
+        else:
+            print("ERROR: Pyshifts Not Set Up! Please run $. setup.sh first.")
+            sys.exit(1)
+
+
         if 'LARMORCA_BIN' not in os.environ and 'PYMOL_GIT_MOD' in os.environ:
             if sys.platform.startswith('linux') and platform.machine() == 'x86_32':
                 initialdir_stride = os.path.join(os.environ['PYMOL_GIT_MOD'],"Larmorca","i86Linux2","larmorca")
@@ -221,20 +227,20 @@ class PyShiftsPlugin:
         else:
             if VERBOSE: print('LARMORCA_BIN not found in environmental variables.')
             self.larmorca_bin.set('')
-        
+
         # tooltips
         self.balloon = Pmw.Balloon(self.parent)
-        
+
         self.dialog = Pmw.Dialog(self.parent,
                                  buttons = ('Exit',),
                                  title = 'PyShifts Plugin for PyMOL',
                                  command = self.execute)
         self.dialog.component('buttonbox').button(0).pack(fill='both',expand = 1, padx=10)
         Pmw.setbusycursorattributes(self.dialog.component('hull'))
-        
+
         w = tkinter.Label(self.dialog.interior(),text = 'PyShifts Plugin for PyMOL\nby  Jingru Xie, Kexin Zhang, and Aaron T. Frank, 2016\n',background = 'black', foreground = 'yellow')
         w.pack(expand = 1, fill = 'both', padx = 8, pady = 5)
-        
+
         # add progress meter
         self.m = Meter(self.dialog.interior(), relief='ridge', bd=5)
         self.m.pack(expand = 1, padx = 10, pady = 5, fill='x')
@@ -382,7 +388,7 @@ class PyShiftsPlugin:
         self.CS_table.insert(1, 'Chemical Shift Table'.center(55))
         self.CStable_header = 'resname resid nuclei expCS predCS weighted_error'
         self.CStable_header = string.split(self.CStable_header)
-        
+
         # Create row headers
         headerLine = ' '
         for column in range(len(self.CStable_header)):
@@ -418,7 +424,7 @@ class PyShiftsPlugin:
         # initialize buttons as disabled
         for button in range(self.save_CStable.numbuttons()):
             self.save_CStable.button(button).config(state = 'disabled')
-        
+
         # Reference chemical shift file
         self.cs_ent = Pmw.EntryField(group_table,
                                       label_text='Chemical Shift File:', labelpos='wn',
@@ -673,7 +679,7 @@ class PyShiftsPlugin:
         group_about.grid(sticky='we', row=0,column=0,padx=5,pady=3)
         about_plugin = """ Tool For Comparing and Visualizing Chemical Shift Differences.
                     Jingru Xie <jingrux .at. umich.edu>
-                    Kexin Zhang <kexin .at. umich.edu> 
+                    Kexin Zhang <kexin .at. umich.edu>
                     Aaron T. Frank  <afrankz .at. umich.edu>
                     Please cite this plugin if you use it in a publication.
                         """
@@ -1137,7 +1143,7 @@ class PyShiftsPlugin:
     def load_measuredCS(self):
         # load measured Chemical shift data from file
         # If measurd CS file not given, an error box will pop up and return false
-        
+
         self.reset_measuredCS()
         print('loading measured chemical shift from file: %s...'%self.cs.get())
         if self.check_file(self.cs.get()):
@@ -1225,15 +1231,15 @@ class PyShiftsPlugin:
             # generate keys to self.predictedCS
             predCS[keypred] = larmord_predCS[res]
         return predCS
-        
+
     def prepare_bme_files(self):
         states = [i for i in range(1,1+cmd.count_states(self.pymol_sel.get()))]
         predCS_data_ext = self.predCS_data_ext[self.predCS_data_ext['state'].isin(states)]
-        
+
         # remove data flagged as outlier
         self.expCS_data_ext['keys'] = self.expCS_data_ext.agg('{0[resid]}:{0[resname]}:{0[nucleus]}'.format, axis=1)
         expCS_data_ext = self.expCS_data_ext[~self.expCS_data_ext['keys'].isin(self.outlier_keys)]
-    
+
         # filter chemical shifts if needed
         if self.larmord_error_sel == 'proton':
             expCS_data_ext = expCS_data_ext[self.expCS_data_ext['nucleus'].isin(self.proton_list)]
@@ -1241,19 +1247,19 @@ class PyShiftsPlugin:
             expCS_data_ext = expCS_data_ext[self.expCS_data_ext['nucleus'].isin(self.carbon_list)]
         if self.larmord_error_sel == 'nitrogen':
             expCS_data_ext = expCS_data_ext[self.expCS_data_ext['nucleus'].isin(self.nitrogen_list)]
-        
+
         # merge predCS, expCS, and errors
         self.mergedCS = predCS_data_ext.merge(expCS_data_ext, on = ['resname', 'resid', 'nucleus'])
         self.mergedCS = self.mergedCS.merge(self.larmord_acc_ext, on = ['resname', 'nucleus'])
         self.mergedCS = self.mergedCS.sort_values(['nucleus', 'resid', 'state'], ascending=[None,True,True])
         print(self.mergedCS.head())
-        
+
         # shape into matrices
         nrow = len(self.mergedCS.state.unique())
         self.cs_matrix = pd.DataFrame(self.mergedCS.predCS.values.reshape(-1, nrow).transpose())
         self.sim_matrix = pd.DataFrame(self.mergedCS.expCS.values.reshape(-1, nrow).transpose()).transpose()
         self.error_matrix = pd.DataFrame(self.mergedCS.MAE.values.reshape(-1, nrow).transpose()).transpose()
-        
+
         self.sim_fn = None
         sim_os_fh, self.sim_fn = tempfile.mkstemp(suffix='.txt') # file os handle, file name
         os.close(sim_os_fh)
@@ -1268,14 +1274,14 @@ class PyShiftsPlugin:
 
     def prepare_for_clustering(self):
         states = [i for i in range(1,1+cmd.count_states(self.pymol_sel.get()))]
-        
+
         # get predicted chemical shifts
         predCS_data_ext = self.predCS_data_ext[self.predCS_data_ext['state'].isin(states)]
-        
+
         # merge data
         self.clusterCS = predCS_data_ext.merge(self.larmord_acc_ext, on = ['resname', 'nucleus'])
         self.clusterCS = self.clusterCS.sort_values(['nucleus', 'resid', 'state'], ascending=[None,True,True])
-        
+
         # shape into matrices
         nrow = len(self.clusterCS.state.unique())
         self.clusterCS = self.clusterCS.predCS.values.reshape(-1, nrow).transpose()
@@ -1346,10 +1352,10 @@ class PyShiftsPlugin:
     ## Functions related to self.runCompare()
     def runBME(self):
         bmea = bme.Reweight(verbose=VERBOSE)
-    
+
         # load data
         bmea.load(self.exp_fn, self.sim_fn)
-    
+
         # do optimization using theta=2
         bme_converged = False
         theta=1.0
@@ -1362,7 +1368,7 @@ class PyShiftsPlugin:
         self.w_opt = list(np.round_(bmea.get_weights(), 5))
         self.w_opt.insert(0,0)
         return(theta)
-    
+
     def root_mean_square_error(self,x,y,mae):
         # Calculate the root mean square error of two vectors x,y
         # Avoid dependence on python packages
@@ -1382,7 +1388,7 @@ class PyShiftsPlugin:
     def confidence(self,x, y, mae):
         # Calculate the confidence PYM
         # see: A Bayesian approach to NMR crystal structure determination (10.1039/C9CP04489B)
-        prob = 1.0 
+        prob = 1.0
         N = len(x)
         if len(x)!=len(y) or len(x)!=len(mae):
             return False
@@ -1484,7 +1490,7 @@ class PyShiftsPlugin:
             # try to get measured chemical shifts for each predicted value
             try:
                 expCS = self.measuredCS[key]
-                
+
                 # ignore predictions that exhibit errors that are greater than mae * self.larmord_outlier_threshold
                 if nucleus in self.carbon_list:
                     if (np.abs(predCS - expCS - self.larmord_carbon_offset.get())) > mae * self.larmord_outlier_threshold.get():
@@ -1535,13 +1541,13 @@ class PyShiftsPlugin:
             ntotal +=1
             total_error += np.abs(error)
             cmd.alter("resi %s and n. %s"%(resid, nucleus), "b=%s"%error)
-        
+
         # all shifts
         pearson = self.computePearson('total', output_total, ntotal, state_number)
         self.Pearson_coef.append(pearson)
         RMSE = self.root_mean_square_error(list_predCS, list_expCS, list_mae)
         self.RMSE_coef.append(RMSE)
-        
+
         PYM = self.confidence(list_predCS, list_expCS, list_mae)
         self.PYM_coef.append(PYM)
 
@@ -1685,21 +1691,21 @@ class PyShiftsPlugin:
 
         # Disable all the buttons while running analysis
         self.disableAll()
-        
+
         # reset
         self.get_shifts_from_file_larmor = False
 
         # reset predicted and measured chemical shifts(if ever loaded) before running analysis
         self.reset_predictedCS()
-        
+
         # reset outliers keys
         self.outlier_keys = []
-        
+
         # checking selection
         sel_name = self.check_selection(sel)
         if (not sel_name):
           return False
-        
+
         # each object in the selection is treated as an independent struc
         cmd.enable(sel_name) # enable selection
         objlist = cmd.get_object_list(sel_name)
@@ -1710,7 +1716,7 @@ class PyShiftsPlugin:
                 #if number of states is greater than 1
                 if self.PSICO and cmd.count_states(objname) > 1:
                     self.get_shifts_from_file_larmor = True
-                    
+
                     pdb_fn = None
                     pdb_os_fh, pdb_fn = tempfile.mkstemp(suffix='.pdb') # file os handle, file name
                     os.close(pdb_os_fh)
@@ -1722,10 +1728,10 @@ class PyShiftsPlugin:
                     larmord_tmpout_fn = None
                     pdb_os_fh, larmord_tmpout_fn = tempfile.mkstemp(suffix='.larmord') # file os handle, file name
                     os.close(pdb_os_fh)
-    
+
                     psico.exporting.save_traj(filename = dcd_fn, selection = objname)
                     cmd.save(filename = pdb_fn, selection = objname, state = 1)
-                    
+
                     if self.get_shifts_from_larmord:
                         larmor_cmd = '%s/larmord -cutoff 15.0 -parmfile %s -reffile %s -trj %s %s | awk \'{print $2+1, $3, $4, $5, $6, $9}\' > %s' % (self.larmord_bin.get(), self.larmord_para.get(), self.larmord_ref.get(), dcd_fn, pdb_fn, larmord_tmpout_fn)
                     if self.get_shifts_from_larmorca:
@@ -1743,7 +1749,7 @@ class PyShiftsPlugin:
             if self.get_shifts_from_file_larmor:
                 self.predCS_data_ext = pd.read_csv(self.cs2_internal, sep = '\s+', names = ['state', 'resid', 'resname', 'nucleus', 'predCS', 'id'])
                 print("from internal file")
-            if self.get_shifts_from_file or self.get_shifts_from_file_larmor: 
+            if self.get_shifts_from_file or self.get_shifts_from_file_larmor:
                 self.get_shifts_from_larmord = False
                 self.get_shifts_from_larmorca = False
                 # check for mismatch between  number of states in external file and number states in pymol object
@@ -1810,7 +1816,7 @@ class PyShiftsPlugin:
 
         self.load_measuredCS()
         self.conv_resname_format()
-        
+
         # load MAEs and maybe prep for BME
         if self.weighted_errors:
             self.load_MAE()
@@ -1846,7 +1852,7 @@ class PyShiftsPlugin:
 
         # initial best indices
         self.runSort()
-        
+
         self.analyzeButton.button(0).config(state = 'normal')
         self.tableButton.button(1).config(state = 'normal')
         self.tableButton.button(0).config(state = 'normal')
@@ -1859,7 +1865,7 @@ class PyShiftsPlugin:
         """
         self.resetCSTable()
         # setup files for clustering and weighting
-        
+
         # finalize outlier key
         RUN_BME_ = self.BME and cmd.count_states(self.pymol_sel.get()) > 1 and self.check_file(self.cs.get())
         self.outlier_keys = list(set(self.outlier_keys))
@@ -2378,10 +2384,10 @@ class PyShiftsPlugin:
         err_msg = 'Mismatch # states in %s !=  # states in %s.' %(self.cs2.get(), self.pymol_sel.get())
         print('ERROR: %s' % (err_msg,))
         tkMessageBox.showinfo(title='ERROR', message=err_msg)
-        
+
     def check_states_mismatch(self):
         return(len(self.predCS_data_ext.state.unique()) != cmd.count_states(self.pymol_sel.get()))
-        
+
     def print_file_error(self, file):
         err_msg = 'The %s does not exist or is empty.' %(file,)
         print('ERROR: %s' % (err_msg,))
