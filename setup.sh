@@ -6,6 +6,7 @@
 conda create -n pyshifts
 conda activate pyshifts
 conda install -c schrodinger pymol
+conda install pandas # required for nmrstarConverter
 echo "export PYSHIFTS_PATH=$(pwd)" >> ~/.bashrc
 echo "export PATH=\$PYSHIFTS_PATH:\$PATH" >> ~/.bashrc
 
@@ -33,7 +34,7 @@ then
 fi
 
 source ~/.bashrc
-# Install python packages 
+# Install python packages
 # If pymol installed from installer, then python packages have to be installed
 # inside pymol
 # If pymol installed from conda, then there is no conda inside pymol
@@ -44,9 +45,7 @@ if ! grep -q "No module named 'conda'" error_cath
 then
     echo "Python Packages Installed inside PyMOL."
 else
-    conda env update --file conda_setup.yml 
+    conda env update --file conda_setup.yml
     echo "Python Packages Installed with conda."
-fi    
+fi
 rm error_cath
-
-
