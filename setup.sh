@@ -5,7 +5,14 @@
 # create conda environment for pyshifts and set path
 conda create -n pyshifts
 conda activate pyshifts
-conda install -c schrodinger pymol
+
+#conda install -c schrodinger pymol=2.2
+conda install  -y -c schrodinger pymol
+conda install  -y -c anaconda -c schrodinger pandas
+conda install  -y -c anaconda -c schrodinger pymol-psico
+conda install  -y -c anaconda -c schrodinger scikit-learn
+conda install  -y -c anaconda -c schrodinger scipy
+
 echo "export PYSHIFTS_PATH=$(pwd)" >> ~/.bashrc
 echo "export PATH=\$PYSHIFTS_PATH:\$PATH" >> ~/.bashrc
 
@@ -39,14 +46,14 @@ source ~/.bashrc
 # If pymol installed from conda, then there is no conda inside pymol
 # and packages can be directly installed with conda install
 
-pymol -cq pymol_setup.py > error_cath
-if ! grep -q "No module named 'conda'" error_cath
-then
-    echo "Python Packages Installed inside PyMOL."
-else
-    conda env update --file conda_setup.yml 
-    echo "Python Packages Installed with conda."
-fi    
-rm error_cath
+# pymol -cq pymol_setup.py > error_cath
+# if ! grep -q "No module named 'conda'" error_cath
+# then
+#     echo "Python Packages Installed inside PyMOL."
+# else
+#     # conda env update --file conda_setup.yml 
+#     echo "Python Packages Installed with conda."
+# fi    
+# rm error_cath
 
 
