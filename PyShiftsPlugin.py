@@ -1149,7 +1149,7 @@ class PyShiftsPlugin:
         print('loading measured chemical shift from file: %s...'%measuredCS_fn)
         if self.check_file(measuredCS_fn):
             # read in from external file
-            if measuredCS_fn.lower().endswith(('nmrstar', '.str'):
+            if measuredCS_fn.lower().endswith(('nmrstar', '.str')):
                 print('Converting nmrstar chemical shift to measured chemical shift')
                 from nmrstarConverter import nmrstar2measure
                 tmp_measured_file =  "tmp_measured_shifts.dat"
