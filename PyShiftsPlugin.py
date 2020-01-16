@@ -1153,9 +1153,12 @@ class PyShiftsPlugin:
                 print('Converting nmrstar chemical shift to measured chemical shift')
                 from nmrstarConverter import nmrstar2measure
                 tmp_measured_file =  "tmp_measured_shifts.dat"
-                nmrstar2measure(measuredCS_fn, tmp_measured_file)
+                nmrstar_fn = "tmp_nmrstar.str"
+                os.system("sed -n '/_Atom_chem_shift/,/stop_/p' %s | grep -v stop_ > %s" %(measuredCS_fn, nmrstar_fn))
+                nmrstar2measure(nmrstar_fn, tmp_measured_file)
                 expCS_data = pd.read_csv(tmp_measured_file, sep = '\s+', names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
                 os.remove(tmp_measured_file)
+                os.remove(nmrstar_fn)
             else:
                 expCS_data = pd.read_csv(measuredCS_fn, sep = '\s+', names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
             self.expCS_data_ext = expCS_data

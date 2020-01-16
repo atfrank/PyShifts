@@ -10,7 +10,7 @@ def read_nmrstar(nmrstar_file):
     with open(nmrstar_file, "r") as fi:
         columns = []
         for ln in fi:
-            if ln.startswith("_"):
+            if ln.startswith("_Atom_chem_shift"):
                 _, col = ln.rstrip().split('.')
                 columns.append(col)
     ncols = len(columns)
@@ -20,9 +20,8 @@ def read_nmrstar(nmrstar_file):
                           delim_whitespace=True)
     # transform column format
     nmrstar[['Atom_ID']] = nmrstar[['Atom_ID']].replace('"', '')
-    resname_map = {'G': 'GUA', 'A': 'ADE', 'C': 'CYT', 'U': 'URA',
-                  'GUA': 'GUA', 'ADE': 'ADE', 'CYT': 'CYT', 'URA': 'URA'}
-    nmrstar[['Comp_ID']] = nmrstar['Comp_ID'].map(resname_map)
+    resname_map = {'G': 'GUA', 'A': 'ADE', 'C': 'CYT', 'U': 'URA'}
+    nmrstar[['Comp_ID']] = nmrstar[['Comp_ID']].replace(resname_map)
     nmrstar[['Val_err']] = nmrstar[['Val_err']].replace('?', '.')
     return nmrstar[["Comp_ID", "Comp_index_ID", "Atom_ID", "Val", "Val_err", "Entry_ID"]]
 
