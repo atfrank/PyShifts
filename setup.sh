@@ -3,20 +3,31 @@
 # pre-requesites: conda, xQuartz
 
 # create conda environment for pyshifts and set path
-conda create -n pyshifts
+conda create -y -n pyshifts
 conda activate pyshifts
 
-#conda install -c schrodinger pymol=2.2
+# install Python dependenices
 conda install  -y -c schrodinger pymol
 conda install  -y -c anaconda -c schrodinger pandas
 conda install  -y -c anaconda -c schrodinger pymol-psico
 conda install  -y -c anaconda -c schrodinger scikit-learn
 conda install  -y -c anaconda -c schrodinger scipy
 
+
+# install BME
+echo "# added during PYSHIFTS installation" >> ~/.bashrc
+if ! [ "$(bash -c 'echo ${BME}')" ]
+then
+    git clone https://github.com/KULL-Centre/BME
+    cd BME
+    echo "export BME=$(pwd)" >> ~/.bashrc
+    echo "export PYTHONPATH=\$BME:\$PATH" >> ~/.bashrc
+fi
+
 echo "export PYSHIFTS_PATH=$(pwd)" >> ~/.bashrc
 echo "export PATH=\$PYSHIFTS_PATH:\$PATH" >> ~/.bashrc
 
-# get Larmord & LarmorCa dependencies
+# get Larmord and LarmorCa dependencies
 if ! [ "$(bash -c 'echo ${LARMORD_BIN}')" ]
 then
     git clone --depth=1 https://github.com/karoka/LarmorD_New.git
