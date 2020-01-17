@@ -643,7 +643,7 @@ class PyShiftsPlugin:
 
         self.min_size_ent = Pmw.EntryField(group_error,
                         labelpos = 'w',
-                        label_text='Number of clusters [SKLEARN]:',
+                        label_text='Number of clusters:',
                         value = 2,
                         entry_width = 3,
                         entry_textvariable=self.min_size
