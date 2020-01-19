@@ -643,7 +643,7 @@ class PyShiftsPlugin:
 
         self.min_size_ent = Pmw.EntryField(group_error,
                         labelpos = 'w',
-                        label_text='Number of clusters [SKLEARN]:',
+                        label_text='Number of clusters:',
                         value = 2,
                         entry_width = 3,
                         entry_textvariable=self.min_size
@@ -1145,10 +1145,22 @@ class PyShiftsPlugin:
         # If measurd CS file not given, an error box will pop up and return false
 
         self.reset_measuredCS()
-        print('loading measured chemical shift from file: %s...'%self.cs.get())
-        if self.check_file(self.cs.get()):
+        measuredCS_fn = self.cs.get()
+        print('loading measured chemical shift from file: %s...'%measuredCS_fn)
+        if self.check_file(measuredCS_fn):
             # read in from external file
-            expCS_data = pd.read_csv(self.cs.get(), sep = '\s+', names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
+            if measuredCS_fn.lower().endswith(('nmrstar', '.str')):
+                print('Converting nmrstar chemical shift to measured chemical shift')
+                from nmrstarConverter import nmrstar2measure
+                tmp_measured_file =  "tmp_measured_shifts.dat"
+                nmrstar_fn = "tmp_nmrstar.str"
+                os.system("sed -n '/_Atom_chem_shift/,/stop_/p' %s | grep -v stop_ > %s" %(measuredCS_fn, nmrstar_fn))
+                nmrstar2measure(nmrstar_fn, tmp_measured_file)
+                expCS_data = pd.read_csv(tmp_measured_file, sep = '\s+', names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
+                os.remove(tmp_measured_file)
+                os.remove(nmrstar_fn)
+            else:
+                expCS_data = pd.read_csv(measuredCS_fn, sep = '\s+', names = ['resname', 'resid', 'nucleus','expCS', 'junk'])
             self.expCS_data_ext = expCS_data
             measured_resname = expCS_data['resname'].values
             measured_resid = expCS_data['resid'].values
