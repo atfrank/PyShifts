@@ -55,12 +55,3 @@ source ~/.bashrc
 # inside pymol
 # If pymol installed from conda, then there is no conda inside pymol
 # and packages can be directly installed with conda install
-
-pymol -cq pymol_setup.py > error_cath
-if ! grep -q "No module named 'conda'" error_cath
-then
-    echo "Python Packages Installed inside PyMOL."
-else
-    echo "Python Packages Installed with conda."
-fi
-rm error_cath
