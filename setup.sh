@@ -30,7 +30,7 @@ fi
 if ! [ "$(bash -c 'echo ${LARMORD_BIN}')" ]
 then
     git clone --depth=1 https://github.com/karoka/LarmorD_New.git
-    cd LarmorD_new
+    cd LarmorD_New
     make clean
     make
     echo "export LARMORD_BIN=$(pwd)/bin" >> ~/.bashrc
