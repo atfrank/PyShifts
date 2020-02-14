@@ -54,9 +54,9 @@ The third tab `Advanced Options` contains functionality for parameter tuning. Th
 
 ## Publications
 
-* `Pyshifts`(In revision) : Jingru Xie, Kexin Zhang and Aaron T. Frank. "Pyshifts: A PyMOL Plugin for Chemical Shift-Based Analysis of Biomolecular Ensembles".
+* `Pyshifts`(In press) : Jingru Xie, Kexin Zhang and Aaron T. Frank. "PyShifts: A PyMOL Plugin for Chemical Shift-Based Analysis of Biomolecular Ensembles." The Journal of Physical Chemistry B 118.42 (2014): 12168-12175.
 
-* `LarmorD`: Frank, Aaron T., Sean M. Law, and Charles L. Brooks III. "A simple and fast approach for predicting 1H and 13C chemical shifts: toward chemical shift-guided simulations of RNA." The Journal of Physical Chemistry B 118.42 (2014): 12168-12175.
+* `LarmorD`: Frank, Aaron T., Sean M. Law, and Charles L. Brooks III. "A simple and fast approach for predicting 1H and 13C chemical shifts: toward chemical shift-guided simulations of RNA." The Journal of Chemical Information and Modeling (2020).
 
 * `LarmorC⍺`: Frank, Aaron T., et al. "Predicting Protein Backbone Chemical Shifts From Cα Coordinates: Extracting High Resolution Experimental Observables from Low Resolution Models." Journal of chemical theory and computation 11.1 (2014): 325-331.
 
