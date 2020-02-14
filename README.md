@@ -15,7 +15,7 @@ Pyshifts: A Pymol Plugin for Chemical Shift-Based Analysis of Biomolecular Ensem
 
 ```
 git clone https://github.com/atfrank/PyShifts.git
-cd Pyshifts
+cd PyShifts
 . setup.sh
 ```
 The following command will invoke a pymol window
