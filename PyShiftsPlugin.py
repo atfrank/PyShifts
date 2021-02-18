@@ -355,7 +355,7 @@ class PyShiftsPlugin:
         # Create the table header
         self.error_table.insert(1, 'Error Table'.center(50))
         self.table_header = 'state MAE R RMSE BME clusters'
-        self.table_header = string.split(self.table_header)
+        self.table_header = str.split(self.table_header)
 
         # Create row headers
         headerLine = ' '
@@ -387,7 +387,7 @@ class PyShiftsPlugin:
         # Create the table header
         self.CS_table.insert(1, 'Chemical Shift Table'.center(55))
         self.CStable_header = 'resname resid nuclei expCS predCS weighted_error'
-        self.CStable_header = string.split(self.CStable_header)
+        self.CStable_header = str.split(self.CStable_header)
 
         # Create row headers
         headerLine = ' '
@@ -1933,7 +1933,7 @@ class PyShiftsPlugin:
             self.table_header = 'state_number nitrogen_error Pearson_nitrogen RMSE_nitrogen w_opt clusters'
         if nucleus == 'all':
             self.table_header = 'state_number total_error Pearson_coef RMSE_coef w_opt clusters'
-        self.table_header = string.split(self.table_header)
+        self.table_header = str.split(self.table_header)
 
         #Initialize state_number array
         self.state_number = orderList
