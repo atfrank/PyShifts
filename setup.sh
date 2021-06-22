@@ -7,7 +7,7 @@ conda create -n pyshifts
 conda activate pyshifts
 
 # install Python dependenices
-conda install -y -c schrodinger pymol
+conda install -y -c schrodinger pymol=2.4
 conda install -y -c anaconda -c schrodinger pandas
 conda install -y -c anaconda -c schrodinger pymol-psico
 conda install -y -c anaconda -c schrodinger scikit-learn
