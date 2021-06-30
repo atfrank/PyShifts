@@ -31,7 +31,7 @@ In PyMOL window, go to `Plugin` -> `Plugin manager` -> `Install new plugin`, cho
 ### Using Pyshifts
 
 #### Open PyMOL
-##### set paths
+##### set paths, e.g.:
 ```
 export PYSHIFTS_PATH=~/Downloads/PyShifts
 export PATH=$PYSHIFTS_PATH:$PATH
