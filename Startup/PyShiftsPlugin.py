@@ -421,6 +421,7 @@ class PyShiftsPlugin:
         self.save_CStable.add('Error table', command = self.saveErrortable)
         self.save_CStable.add('CS table', command = self.saveCStable)
         self.save_CStable.add('Save single state', command = self.saveCStableOnestate)
+        # button to save session
         self.save_CStable.add('Save session', command = self.saveSession)
         # initialize buttons as disabled
         for button in range(self.save_CStable.numbuttons()):
