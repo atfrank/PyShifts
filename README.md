@@ -30,6 +30,24 @@ In PyMOL window, go to `Plugin` -> `Plugin manager` -> `Install new plugin`, cho
 
 ### Using Pyshifts
 
+#### Open PyMOL
+##### set paths, e.g.:
+```
+export PYSHIFTS_PATH=~/Downloads/PyShifts
+export PATH=$PYSHIFTS_PATH:$PATH
+export BME=~/Downloads/PyShifts/BME
+export PYTHONPATH=$BME:$PATH
+
+export LARMORD_BIN=~/Downloads/PyShifts/LarmorD_New/bin
+export PATH=$LARMORD_BIN:$PATH
+export LARMORCA_BIN=~/Downloads/PyShifts/LARMORCA/bin
+export PATH=$LARMORCA_BIN:$PATH
+```
+##### open 
+```
+pymol
+```
+
 #### Load Object
 Load the object to be analyzed in PyMOL, e.g. `2KOC_test.pdb` provided in `test/` folder, by typing `load test/2KOC_test.pdb` in pymol command line or dragging the file into PyMOL window.
 
