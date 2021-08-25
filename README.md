@@ -31,7 +31,7 @@ In PyMOL window, go to `Plugin` -> `Plugin manager` -> `Install new plugin`, cho
 ### Using Pyshifts
 
 #### Open PyMOL
-##### manual set evironmental variable and then run PyMOL:
+##### manually set evironmental variable and then run PyMOL:
 ```
 export PYSHIFTS_PATH=~/Downloads/PyShifts
 export PATH=$PYSHIFTS_PATH:$PATH
