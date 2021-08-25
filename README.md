@@ -18,8 +18,10 @@ git clone https://github.com/atfrank/PyShifts.git
 cd PyShifts
 . setup.sh
 ```
-The following command will invoke a pymol window
+The following commands will invoke a pymol window
 ```
+conda activate pyshifts
+source ~/.bashrc
 pymol
 ```
 
