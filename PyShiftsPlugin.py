@@ -421,6 +421,8 @@ class PyShiftsPlugin:
         self.save_CStable.add('Error table', command = self.saveErrortable)
         self.save_CStable.add('CS table', command = self.saveCStable)
         self.save_CStable.add('Save single state', command = self.saveCStableOnestate)
+       	 # button to save session
+        self.save_CStable.add('Save session', command = self.saveSession)
         # initialize buttons as disabled
         for button in range(self.save_CStable.numbuttons()):
             self.save_CStable.button(button).config(state = 'disabled')
@@ -1868,6 +1870,7 @@ class PyShiftsPlugin:
         self.analyzeButton.button(0).config(state = 'normal')
         self.tableButton.button(1).config(state = 'normal')
         self.tableButton.button(0).config(state = 'normal')
+        self.save_CStable.button(3).config(state = 'normal')
         return True
 
     def runSort(self):
@@ -2291,6 +2294,14 @@ class PyShiftsPlugin:
                 CStable.write(dataline)
         CStable.close()
         return True
+	
+    def saveSession(self):
+        """
+        Save session
+        """
+        objname = self.pymol_sel.get()
+        filename = asksaveasfilename(initialdir = "saved_data/", initialfile = str('save_session_'+objname+".pse"))
+        cmd.save(filename, format = 'pse')
 
     def printCStable(self,state):
         """
