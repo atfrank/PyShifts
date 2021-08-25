@@ -20,8 +20,6 @@ cd PyShifts
 ```
 The following commands will invoke a pymol window
 ```
-conda activate pyshifts
-source ~/.bashrc
 pymol
 ```
 
@@ -33,7 +31,7 @@ In PyMOL window, go to `Plugin` -> `Plugin manager` -> `Install new plugin`, cho
 ### Using Pyshifts
 
 #### Open PyMOL
-##### set paths, e.g.:
+##### manual set evironmental variable and then run PyMOL:
 ```
 export PYSHIFTS_PATH=~/Downloads/PyShifts
 export PATH=$PYSHIFTS_PATH:$PATH
@@ -44,9 +42,17 @@ export LARMORD_BIN=~/Downloads/PyShifts/LarmorD_New/bin
 export PATH=$LARMORD_BIN:$PATH
 export LARMORCA_BIN=~/Downloads/PyShifts/LARMORCA/bin
 export PATH=$LARMORCA_BIN:$PATH
+
+conda activate pyshifts
+pymol
 ```
-##### open 
+or
+
+##### source evironmental variables from bashrc and then run PyMOL  
 ```
+source ~/.bashrc
+
+conda activate pyshifts
 pymol
 ```
 
