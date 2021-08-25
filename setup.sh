@@ -11,6 +11,7 @@ conda install -y -c schrodinger pymol=2.4
 conda install -y -c anaconda -c schrodinger pandas
 conda install -y -c anaconda -c schrodinger pymol-psico
 conda install -y -c anaconda -c schrodinger scikit-learn
+conda install -y -c anaconda wget
 
 echo "# added during PYSHIFTS installation" >> ~/.bashrc
 echo "export PYSHIFTS_PATH=$(pwd)" >> ~/.bashrc
@@ -18,8 +19,10 @@ echo "export PATH=\$PYSHIFTS_PATH:\$PATH" >> ~/.bashrc
 
 # install BME
 if ! [ "$(bash -c 'echo ${BME}')" ]
-then
-    git clone --depth=1 https://github.com/KULL-Centre/BME
+then    
+    wget https://github.com/KULL-Centre/BME/archive/refs/tags/v1.0.tar.gz
+    tar -xvf v1.0.tar.gz
+    mv BME-1.0 BME
     cd BME
     echo "export BME=$(pwd)" >> ~/.bashrc
     echo "export PYTHONPATH=\$BME:\$PATH" >> ~/.bashrc
