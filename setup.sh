@@ -1,7 +1,4 @@
-#!/bin/bash
-
 # pre-requesites: conda, xQuartz
-
 # create conda environment for pyshifts and set path
 conda init bash
 conda create -n pyshifts
