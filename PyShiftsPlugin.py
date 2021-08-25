@@ -1728,7 +1728,7 @@ class PyShiftsPlugin:
             self.sel_obj_list.append('%s and %s' % (sel_name, objname))
             if not self.get_shifts_from_file:
                 #if number of states is greater than 1
-                if self.PSICO and cmd.count_states(objname) > 1:
+                if self.PSICO and cmd.count_states(objname) > 0:
                     self.get_shifts_from_file_larmor = True
 
                     pdb_fn = None
@@ -2171,7 +2171,7 @@ class PyShiftsPlugin:
         state = self.currentstate
         temp_dict = {}
         temp_dict = eval('self.larmord_error_'+self.larmord_error_sel+'['+str(state)+'].copy()')
-        for key in temp_dict.keys():
+        for key in list(temp_dict.keys()):
             if key[1] == ':':
                 new_key = '0' + key
                 temp_dict[new_key] = temp_dict.pop(key)
