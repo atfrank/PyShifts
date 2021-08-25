@@ -29,7 +29,7 @@ fi
 # get Larmord and LarmorCa dependencies
 if ! [ "$(bash -c 'echo ${LARMORD_BIN}')" ]
 then
-    git clone --depth=1 https://github.com/karoka/LarmorD_New.git
+    git clone --depth=1 https://github.com/KULL-Centre/BME/archive/refs/tags/v1.0.tar.gz
     cd LarmorD_New
     make clean
     make
